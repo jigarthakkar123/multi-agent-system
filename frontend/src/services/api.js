@@ -1,26 +1,29 @@
 import axios from 'axios';
 
-// Get and sanitize API Base URL to prevent double slashes
+// Get and sanitize API Base URL to guarantee 100% clean endpoint path
 const getApiBase = () => {
-  let envBase = import.meta.env.VITE_API_BASE_URL;
-  if (!envBase) {
+  let envBase = (import.meta.env.VITE_API_BASE_URL || '').trim();
+  
+  if (!envBase || envBase === '/api') {
     if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-      envBase = 'https://multi-agent-system-fs68.onrender.com';
+      envBase = 'https://multi-agent-system-fs68.onrender.com/api';
     } else {
       return '/api';
     }
   }
 
-  // Remove trailing slashes
-  envBase = envBase.trim().replace(/\/+$/, '');
-  
-  // Ensure it ends with /api cleanly without //api
-  if (!envBase.endsWith('/api')) {
-    envBase = `${envBase}/api`;
+  // Normalize duplicate slashes
+  while (envBase.includes('//api')) {
+    envBase = envBase.replace('//api', '/api');
   }
-  
-  // Replace any duplicate slashes except after protocol
-  return envBase.replace(/([^:])\/\/+/g, '$1/');
+  while (envBase.endsWith('/')) {
+    envBase = envBase.slice(0, -1);
+  }
+  if (!envBase.endsWith('/api')) {
+    envBase = envBase + '/api';
+  }
+
+  return envBase;
 };
 
 const API_BASE = getApiBase();

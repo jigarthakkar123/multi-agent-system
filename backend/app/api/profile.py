@@ -9,7 +9,10 @@ from ..schemas.business_profile import BusinessProfileOut, BusinessProfileUpdate
 router = APIRouter(prefix="/profile", tags=["Business Profile"])
 
 @router.get("", response_model=BusinessProfileOut)
-def get_business_profile(db: Session = Depends(get_db)):
+def get_business_profile(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     profile = db.query(BusinessProfile).first()
     if not profile:
         profile = BusinessProfile()

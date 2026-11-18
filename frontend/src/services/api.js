@@ -88,7 +88,26 @@ export const recordApprovalDecision = (id, decision, reason) =>
 // Reports & PDF
 export const getReports = () => api.get('/reports');
 export const getReportDetails = (id) => api.get(`/reports/${id}`);
-export const getReportPdfUrl = (id) => `${API_BASE}/reports/${id}/pdf`;
+export const getReportPdfUrl = (id) => {
+  const token = localStorage.getItem('access_token');
+  return `${API_BASE}/reports/${id}/pdf${token ? `?token=${token}` : ''}`;
+};
+export const downloadReportPdfBlob = async (id) => {
+  const token = localStorage.getItem('access_token');
+  const res = await api.get(`/reports/${id}/pdf`, {
+    responseType: 'blob',
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
+  });
+  const blob = new Blob([res.data], { type: 'application/pdf' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Real_Estate_Decision_Intelligence_Report_${id}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+};
 
 // AI Business Chat
 export const sendChatMessage = (message) => api.post('/chat', { message });

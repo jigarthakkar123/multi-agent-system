@@ -9,7 +9,7 @@ import {
   Sparkles,
   ExternalLink
 } from 'lucide-react';
-import { getReportPdfUrl } from '../services/api';
+import { getReportPdfUrl, downloadReportPdfBlob } from '../services/api';
 
 export default function ReportsView({ reports, currentReport, onSelectReport }) {
   const [selectedReportId, setSelectedReportId] = useState(
@@ -20,8 +20,13 @@ export default function ReportsView({ reports, currentReport, onSelectReport }) 
     ? currentReport
     : (reports && reports.find((r) => r.id === selectedReportId)) || currentReport;
 
-  const handleDownloadPdf = (id) => {
-    window.open(getReportPdfUrl(id || selectedReportId), '_blank');
+  const handleDownloadPdf = async (id) => {
+    const targetId = id || selectedReportId;
+    try {
+      await downloadReportPdfBlob(targetId);
+    } catch (e) {
+      window.open(getReportPdfUrl(targetId), '_blank');
+    }
   };
 
   return (

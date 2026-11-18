@@ -61,101 +61,249 @@ async def upload_dataset(
                 "deals_count": len(dfs["deals"])
             }
         else:
-            # Process single CSV file and persist into database
+            # Process single CSV file with strict schema validation (Zero-Hallucination Ingestion)
             csv_df = pd.read_csv(file_path)
             csv_df.columns = [c.strip().lower().replace(" ", "_") for c in csv_df.columns]
             cols = list(csv_df.columns)
             table_name = "unknown"
             inserted_count = 0
+            rejection_reasons = []
             
-            def safe_date(val):
-                if pd.isna(val):
-                    return datetime.utcnow().date()
+            def parse_date(val):
+                if pd.isna(val) or val is None or str(val).strip() == "":
+                    return None
                 try:
                     return pd.to_datetime(val).date()
                 except Exception:
-                    return datetime.utcnow().date()
+                    return None
 
-            if any("prop" in c for c in cols):
+            def is_empty(val):
+                return pd.isna(val) or val is None or str(val).strip() == ""
+
+            # Prioritize specific table column signatures
+            if any("deal" in c for c in cols) or "sale_price" in cols:
+                table_name = "deals"
+            elif any("prop" in c for c in cols) and ("asking_price" in cols or "area_sqft" in cols or "property_type" in cols):
                 table_name = "properties"
-                for _, row in csv_df.iterrows():
-                    pid = str(row.get("property_id") or f"PROP_{uuid.uuid4().hex[:6].upper()}")
-                    existing = db.query(Property).filter(Property.property_id == pid).first()
+            elif any("lead" in c for c in cols) and ("budget_min" in cols or "inquiry_date" in cols or "lead_name" in cols):
+                table_name = "leads"
+            elif any("exp" in c for c in cols) or ("amount" in cols and "vendor" in cols):
+                table_name = "expenses"
+            elif any("prop" in c for c in cols):
+                table_name = "properties"
+            elif any("lead" in c for c in cols):
+                table_name = "leads"
+
+            if table_name == "properties":
+                for idx, row in csv_df.iterrows():
+                    missing = []
+                    pid = row.get("property_id")
+                    if is_empty(pid): missing.append("property_id")
+                    ptype = row.get("property_type")
+                    if is_empty(ptype): missing.append("property_type")
+                    city = row.get("city")
+                    if is_empty(city): missing.append("city")
+                    area = row.get("area_sqft")
+                    if is_empty(area): missing.append("area_sqft")
+                    price = row.get("asking_price")
+                    if is_empty(price): missing.append("asking_price")
+                    ldate = parse_date(row.get("listing_date"))
+                    if not ldate: missing.append("listing_date")
+
+                    if missing:
+                        rejection_reasons.append(f"Row {idx+1}: Rejected due to missing required field(s): {', '.join(missing)}")
+                        continue
+
+                    try:
+                        area_f = float(area)
+                        price_f = float(price)
+                    except ValueError:
+                        rejection_reasons.append(f"Row {idx+1}: Rejected due to non-numeric area_sqft or asking_price")
+                        continue
+
+                    existing = db.query(Property).filter(Property.property_id == str(pid).strip()).first()
                     if not existing:
                         p = Property(
-                            property_id=pid,
-                            property_type=str(row.get("property_type") or "Apartment"),
-                            city=str(row.get("city") or "Mumbai"),
-                            locality=str(row.get("locality") or "Central"),
-                            bedrooms=int(row.get("bedrooms") or 2),
-                            area_sqft=float(row.get("area_sqft") or 1000.0),
-                            asking_price=float(row.get("asking_price") or 5000000.0),
-                            listing_date=safe_date(row.get("listing_date")),
-                            listing_status=str(row.get("listing_status") or "Available")
+                            property_id=str(pid).strip(),
+                            property_type=str(ptype).strip(),
+                            city=str(city).strip(),
+                            locality=str(row.get("locality") or "Central").strip(),
+                            bedrooms=int(row.get("bedrooms")) if not is_empty(row.get("bedrooms")) else 0,
+                            area_sqft=area_f,
+                            asking_price=price_f,
+                            listing_date=ldate,
+                            listing_status=str(row.get("listing_status") or "Available").strip()
                         )
                         db.add(p)
                         inserted_count += 1
-            elif any("lead" in c for c in cols):
-                table_name = "leads"
-                for _, row in csv_df.iterrows():
-                    lid = str(row.get("lead_id") or f"LEAD_{uuid.uuid4().hex[:6].upper()}")
-                    existing = db.query(Lead).filter(Lead.lead_id == lid).first()
+
+            elif table_name == "leads":
+                for idx, row in csv_df.iterrows():
+                    missing = []
+                    lid = row.get("lead_id")
+                    if is_empty(lid): missing.append("lead_id")
+                    lname = row.get("lead_name")
+                    if is_empty(lname): missing.append("lead_name")
+                    city = row.get("city")
+                    if is_empty(city): missing.append("city")
+                    idate = parse_date(row.get("inquiry_date"))
+                    if not idate: missing.append("inquiry_date")
+                    bmin = row.get("budget_min")
+                    if is_empty(bmin): missing.append("budget_min")
+                    bmax = row.get("budget_max")
+                    if is_empty(bmax): missing.append("budget_max")
+
+                    if missing:
+                        rejection_reasons.append(f"Row {idx+1}: Rejected due to missing required field(s): {', '.join(missing)}")
+                        continue
+
+                    try:
+                        bmin_f = float(bmin)
+                        bmax_f = float(bmax)
+                    except ValueError:
+                        rejection_reasons.append(f"Row {idx+1}: Rejected due to non-numeric budget values")
+                        continue
+
+                    existing = db.query(Lead).filter(Lead.lead_id == str(lid).strip()).first()
                     if not existing:
                         lead = Lead(
-                            lead_id=lid,
-                            lead_name=str(row.get("lead_name") or "Inquiry Lead"),
-                            property_type_interest=str(row.get("property_type_interest") or "Apartment"),
-                            city=str(row.get("city") or "Mumbai"),
-                            lead_source=str(row.get("lead_source") or "Campaign"),
-                            inquiry_date=safe_date(row.get("inquiry_date")),
-                            budget_min=float(row.get("budget_min") or 3000000.0),
-                            budget_max=float(row.get("budget_max") or 8000000.0),
-                            lead_status=str(row.get("lead_status") or "New"),
-                            phone=str(row.get("phone") or "")
+                            lead_id=str(lid).strip(),
+                            lead_name=str(lname).strip(),
+                            property_type_interest=str(row.get("property_type_interest") or "Apartment").strip(),
+                            city=str(city).strip(),
+                            lead_source=str(row.get("lead_source") or "Campaign").strip(),
+                            inquiry_date=idate,
+                            budget_min=bmin_f,
+                            budget_max=bmax_f,
+                            lead_status=str(row.get("lead_status") or "New").strip(),
+                            phone=str(row.get("phone") or "").strip()
                         )
                         db.add(lead)
                         inserted_count += 1
-            elif any("deal" in c for c in cols):
-                table_name = "deals"
-                for _, row in csv_df.iterrows():
-                    did = str(row.get("deal_id") or f"DEAL_{uuid.uuid4().hex[:6].upper()}")
-                    existing = db.query(Deal).filter(Deal.deal_id == did).first()
+
+            elif table_name == "deals":
+                for idx, row in csv_df.iterrows():
+                    missing = []
+                    did = row.get("deal_id")
+                    if is_empty(did): missing.append("deal_id")
+                    lid = row.get("lead_id")
+                    if is_empty(lid): missing.append("lead_id")
+                    pid = row.get("property_id")
+                    if is_empty(pid): missing.append("property_id")
+                    ddate = parse_date(row.get("deal_date"))
+                    if not ddate: missing.append("deal_date")
+                    sprice = row.get("sale_price")
+                    if is_empty(sprice): missing.append("sale_price")
+                    crate = row.get("commission_rate")
+                    if is_empty(crate): missing.append("commission_rate")
+                    aid = row.get("agent_id")
+                    if is_empty(aid): missing.append("agent_id")
+
+                    if missing:
+                        rejection_reasons.append(f"Row {idx+1}: Rejected due to missing required field(s): {', '.join(missing)}")
+                        continue
+
+                    try:
+                        sprice_f = float(sprice)
+                        crate_f = float(crate)
+                    except ValueError:
+                        rejection_reasons.append(f"Row {idx+1}: Rejected due to non-numeric sale_price or commission_rate")
+                        continue
+
+                    existing = db.query(Deal).filter(Deal.deal_id == str(did).strip()).first()
                     if not existing:
                         deal = Deal(
-                            deal_id=did,
-                            lead_id=str(row.get("lead_id") or "LEAD001"),
-                            property_id=str(row.get("property_id") or "PROP001"),
-                            deal_date=safe_date(row.get("deal_date")),
-                            deal_status=str(row.get("deal_status") or "Closed Won"),
-                            sale_price=float(row.get("sale_price") or 7500000.0),
-                            commission_rate=float(row.get("commission_rate") or 0.02),
-                            agent_id=str(row.get("agent_id") or "AGT001")
+                            deal_id=str(did).strip(),
+                            lead_id=str(lid).strip(),
+                            property_id=str(pid).strip(),
+                            deal_date=ddate,
+                            deal_status=str(row.get("deal_status") or "Closed Won").strip(),
+                            sale_price=sprice_f,
+                            commission_rate=crate_f,
+                            agent_id=str(aid).strip()
                         )
                         db.add(deal)
                         inserted_count += 1
-            elif any("exp" in c for c in cols):
-                table_name = "expenses"
-                for _, row in csv_df.iterrows():
-                    eid = str(row.get("expense_id") or f"EXP_{uuid.uuid4().hex[:6].upper()}")
-                    existing = db.query(Expense).filter(Expense.expense_id == eid).first()
+
+            elif table_name == "expenses":
+                for idx, row in csv_df.iterrows():
+                    missing = []
+                    eid = row.get("expense_id")
+                    if is_empty(eid): missing.append("expense_id")
+                    edate = parse_date(row.get("expense_date"))
+                    if not edate: missing.append("expense_date")
+                    prjid = row.get("project_id")
+                    if is_empty(prjid): missing.append("project_id")
+                    cat = row.get("category")
+                    if is_empty(cat): missing.append("category")
+                    amt = row.get("amount")
+                    if is_empty(amt): missing.append("amount")
+
+                    if missing:
+                        rejection_reasons.append(f"Row {idx+1}: Rejected due to missing required field(s): {', '.join(missing)}")
+                        continue
+
+                    try:
+                        amt_f = float(amt)
+                    except ValueError:
+                        rejection_reasons.append(f"Row {idx+1}: Rejected due to non-numeric expense amount")
+                        continue
+
+                    existing = db.query(Expense).filter(Expense.expense_id == str(eid).strip()).first()
                     if not existing:
                         exp = Expense(
-                            expense_id=eid,
-                            expense_date=safe_date(row.get("expense_date")),
-                            project_id=str(row.get("project_id") or "PRJ001"),
-                            category=str(row.get("category") or "Advertising"),
-                            amount=float(row.get("amount") or 50000.0),
-                            vendor=str(row.get("vendor") or "Marketing Partner")
+                            expense_id=str(eid).strip(),
+                            expense_date=edate,
+                            project_id=str(prjid).strip(),
+                            category=str(cat).strip(),
+                            amount=amt_f,
+                            vendor=str(row.get("vendor") or "").strip()
                         )
                         db.add(exp)
                         inserted_count += 1
-            
+                    missing = []
+                    eid = row.get("expense_id")
+                    if is_empty(eid): missing.append("expense_id")
+                    edate = parse_date(row.get("expense_date"))
+                    if not edate: missing.append("expense_date")
+                    prjid = row.get("project_id")
+                    if is_empty(prjid): missing.append("project_id")
+                    cat = row.get("category")
+                    if is_empty(cat): missing.append("category")
+                    amt = row.get("amount")
+                    if is_empty(amt): missing.append("amount")
+
+                    if missing:
+                        rejection_reasons.append(f"Row {idx+1}: Rejected due to missing required field(s): {', '.join(missing)}")
+                        continue
+
+                    try:
+                        amt_f = float(amt)
+                    except ValueError:
+                        rejection_reasons.append(f"Row {idx+1}: Rejected due to non-numeric expense amount")
+                        continue
+
+                    existing = db.query(Expense).filter(Expense.expense_id == str(eid).strip()).first()
+                    if not existing:
+                        exp = Expense(
+                            expense_id=str(eid).strip(),
+                            expense_date=edate,
+                            project_id=str(prjid).strip(),
+                            category=str(cat).strip(),
+                            amount=amt_f,
+                            vendor=str(row.get("vendor") or "").strip()
+                        )
+                        db.add(exp)
+                        inserted_count += 1
+
             db.commit()
             return {
-                "message": f"CSV dataset successfully processed, validated, and persisted for table: {table_name}.",
+                "message": f"CSV dataset successfully processed with strict zero-hallucination validation for table: {table_name}.",
                 "uploaded_by": f"{current_user.full_name} ({current_user.role})",
                 "rows_detected": len(csv_df),
                 "rows_inserted": inserted_count,
+                "rows_skipped": len(rejection_reasons),
+                "rejection_reasons": rejection_reasons[:10],
                 "table_detected": table_name
             }
     except Exception as e:

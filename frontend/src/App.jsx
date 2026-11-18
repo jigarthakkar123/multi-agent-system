@@ -31,7 +31,8 @@ import {
   getDatasetSummary,
   getMe,
   authLogin,
-  getReportPdfUrl
+  getReportPdfUrl,
+  downloadReportPdfBlob
 } from './services/api';
 
 export default function App() {
@@ -167,9 +168,13 @@ export default function App() {
     }
   };
 
-  const handleDownloadReport = () => {
+  const handleDownloadReport = async () => {
     const reportId = reports && reports[0] ? reports[0].id : 1;
-    window.open(getReportPdfUrl(reportId), '_blank');
+    try {
+      await downloadReportPdfBlob(reportId);
+    } catch (e) {
+      window.open(getReportPdfUrl(reportId), '_blank');
+    }
   };
 
   const handleLogout = () => {

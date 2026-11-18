@@ -57,51 +57,125 @@ class VerificationEngine:
         agent_outputs: Dict[str, str],
         db_tools = None
     ) -> Dict[str, Any]:
+        import json
         discrepancies: List[str] = []
         verified_facts: List[str] = []
         warnings: List[str] = []
 
-        # Ground truth numbers
-        actual_rev = ground_truth_kpis.get("total_revenue", 4766261860.63)
-        actual_comm = ground_truth_kpis.get("total_commission", 117037779.49)
-        actual_exp = ground_truth_kpis.get("total_expenses", 29751912.79)
-        actual_profit = ground_truth_kpis.get("net_profit", actual_comm - actual_exp)
-        actual_margin = ground_truth_kpis.get("profit_margin_pct", 74.58)
-        actual_conv = ground_truth_kpis.get("conversion_rate_pct", 19.17)
-        actual_absorption = ground_truth_kpis.get("absorption_rate_pct", 18.83)
-        actual_win_rate = ground_truth_kpis.get("deal_win_rate_pct", 47.83)
-        actual_price_sqft = ground_truth_kpis.get("avg_property_price_sqft", 8490.35)
-
-        # Valid database percentage benchmarks (whitelist)
+        # Ground truth numbers from database calculation
+        actual_rev = float(ground_truth_kpis.get("total_revenue", 4766261860.63))
+        actual_comm = float(ground_truth_kpis.get("total_commission", 117037779.49))
+        actual_exp = float(ground_truth_kpis.get("total_expenses", 29751912.79))
+        actual_profit = float(ground_truth_kpis.get("net_profit", actual_comm - actual_exp))
+        actual_margin = float(ground_truth_kpis.get("profit_margin_pct", 74.58))
+        actual_conv = float(ground_truth_kpis.get("conversion_rate_pct", 19.17))
+        actual_absorption = float(ground_truth_kpis.get("absorption_rate_pct", 18.83))
+        actual_win_rate = float(ground_truth_kpis.get("deal_win_rate_pct", 47.83))
+        actual_price_sqft = float(ground_truth_kpis.get("avg_property_price_sqft", 8490.35))
         comm_yield = round((actual_comm / actual_rev) * 100, 2) if actual_rev else 2.46
-        valid_percentages = [
-            actual_margin, actual_conv, actual_absorption, actual_win_rate, comm_yield,
-            23.13, 20.77, 19.26, 17.52, 17.23, 17.13,  # Lead channels
-            19.28, 17.82, 16.82, 16.06, 15.43, 14.59,  # Expense categories
-            31.16, 27.58, 24.92, 23.75, 23.17, 17.90,  # Operations & Site visits
-            5.0, 10.0, 15.0, 20.0, 25.0,                # Strategic incentives & thresholds
-            95.0, 96.8, 98.0, 99.0, 99.5, 100.0         # Verification confidence brackets
-        ]
 
-        # Valid currency benchmarks (in INR)
-        valid_currencies = [
-            actual_rev, actual_comm, actual_exp, actual_profit, actual_price_sqft,
-            3500000.0, 5735893.17, 5301558.16, 5004855.45, 4778630.69,
-            4591077.48, 4339897.84, 475483535.03, 5791317.05, 4777612.66,
-            739458658.65, 575710079.22, 517228830.40  # Top Cities: Bharuch, Pune, Nadiad
-        ]
+        # ---------------------------------------------------------------------
+        # Dynamic Whitelist Assembly from Live Database Telemetry
+        # ---------------------------------------------------------------------
+        valid_percentages = {
+            round(actual_margin, 2),
+            round(actual_conv, 2),
+            round(actual_absorption, 2),
+            round(actual_win_rate, 2),
+            round(comm_yield, 2),
+            5.0, 10.0, 15.0, 20.0, 25.0,        # Strategic incentives
+            95.0, 96.8, 98.0, 99.0, 99.5, 100.0 # Confidence thresholds
+        }
 
-        # Dynamically append all database city revenues and property benchmarks
+        valid_currencies = {
+            round(actual_rev, 2),
+            round(actual_comm, 2),
+            round(actual_exp, 2),
+            round(actual_profit, 2),
+            round(actual_price_sqft, 2),
+            3500000.0, 475483535.03, 5791317.05 # Strategic initiatives (Reallocation, Unsold inventory capital)
+        }
+
+        top_channel_name = "Campaign"
+        top_channel_rate = 23.13
+        second_channel_name = "Referral"
+        second_channel_rate = 20.77
+        top_exp_name = "Advertising"
+        top_exp_pct = 19.28
+        second_exp_name = "Maintenance"
+        second_exp_pct = 17.82
+
         if db_tools:
             try:
-                import json
+                # Live lead source percentages
+                leads_data = json.loads(db_tools.get_lead_acquisition_and_funnel())
+                sources = leads_data.get("lead_sources", [])
+                if sources:
+                    top_channel_name = sources[0].get("source", "Campaign")
+                    top_channel_rate = float(sources[0].get("conversion_rate", 23.13))
+                if len(sources) > 1:
+                    second_channel_name = sources[1].get("source", "Referral")
+                    second_channel_rate = float(sources[1].get("conversion_rate", 20.77))
+                for s in sources:
+                    valid_percentages.add(round(float(s.get("conversion_rate", 0)), 2))
+            except Exception:
+                pass
+
+            try:
+                # Live expense category percentages and currency outlays
+                exp_data = json.loads(db_tools.get_expense_breakdown())
+                if exp_data:
+                    top_exp_name = exp_data[0].get("category", "Advertising")
+                    top_exp_pct = float(exp_data[0].get("percentage", 19.28))
+                if len(exp_data) > 1:
+                    second_exp_name = exp_data[1].get("category", "Maintenance")
+                    second_exp_pct = float(exp_data[1].get("percentage", 17.82))
+                for e in exp_data:
+                    valid_percentages.add(round(float(e.get("percentage", 0)), 2))
+                    valid_currencies.add(round(float(e.get("amount", 0)), 2))
+            except Exception:
+                pass
+
+            try:
+                # Live city market revenues
                 cities_info = json.loads(db_tools.get_city_market_data())
                 for c in cities_info:
                     rev = float(c.get("revenue_generated", 0))
                     if rev > 0:
-                        valid_currencies.append(rev)
+                        valid_currencies.add(round(rev, 2))
             except Exception:
                 pass
+
+            try:
+                # Live site visit percentages
+                visit_data = json.loads(db_tools.get_site_visit_analytics())
+                tot_v = visit_data.get("total_visits", 1200)
+                sec_v = visit_data.get("second_visit_demand", 299)
+                exp_off = visit_data.get("expected_offers", 331)
+                if tot_v > 0:
+                    valid_percentages.add(round((sec_v / tot_v) * 100, 2))
+                    valid_percentages.add(round((exp_off / tot_v) * 100, 2))
+            except Exception:
+                pass
+
+            try:
+                # Live broker commissions
+                agent_info = json.loads(db_tools.get_agent_operational_productivity())
+                for a in agent_info.get("agent_leaderboard", []):
+                    c_amt = float(a.get("total_commission", 0))
+                    if c_amt > 0:
+                        valid_currencies.add(round(c_amt, 2))
+            except Exception:
+                pass
+
+            try:
+                conc = json.loads(db_tools.get_broker_concentration())
+                valid_percentages.add(round(float(conc.get("top_10_commission_pct", 31.16)), 2))
+            except Exception:
+                pass
+
+        valid_percentages_list = list(valid_percentages)
+        valid_currencies_list = list(valid_currencies)
 
         # ---------------------------------------------------------------------
         # 1. Exhaustive Numerical Scan Across Every Agent's Output
@@ -113,16 +187,16 @@ class VerificationEngine:
             currencies, percentages = cls.extract_figures(text)
             extracted_figures_count += len(currencies) + len(percentages)
 
-            # Check percentages
+            # Check percentages against dynamic database whitelist
             for pct in percentages:
-                matched = any(abs(pct - valid_pct) <= 0.6 for valid_pct in valid_percentages)
+                matched = any(abs(pct - valid_pct) <= 0.6 for valid_pct in valid_percentages_list)
                 if not matched and pct > 0:
                     unverified_figures.append(f"{pct}% in {agent_name}")
 
-            # Check major currency claims (> Rs. 1 Lakh)
+            # Check major currency claims (> Rs. 1 Lakh) against dynamic database whitelist
             for curr in currencies:
                 if curr >= 100000.0:
-                    matched = any(abs(curr - valid_curr) / valid_curr <= 0.05 for valid_curr in valid_currencies)
+                    matched = any(abs(curr - valid_curr) / valid_curr <= 0.05 for valid_curr in valid_currencies_list)
                     if not matched:
                         unverified_figures.append(f"Rs. {curr:,.0f} in {agent_name}")
 
@@ -131,27 +205,27 @@ class VerificationEngine:
                 discrepancies.append(f"Unverified Claim: {unv} has no direct matching calculation in database telemetry.")
 
         # ---------------------------------------------------------------------
-        # 2. Semantic & Logical Consistency Checks
+        # 2. Semantic & Logical Consistency Checks (Live Derived)
         # ---------------------------------------------------------------------
         combined_text = " ".join(agent_outputs.values()).lower()
 
-        # Channel ranking contradiction check
-        if "referral is the highest" in combined_text or "referral was highest" in combined_text or "referral converts at 28" in combined_text:
+        # Dynamic channel ranking contradiction check
+        if f"{second_channel_name.lower()} is the highest" in combined_text or f"{second_channel_name.lower()} was highest" in combined_text:
             discrepancies.append(
-                "Channel Contradiction: Stated Referral is highest at 28.4%. "
-                "Verified dataset proves Campaign is #1 at 23.13%, followed by Referral at 20.77%."
+                f"Channel Contradiction: Stated {second_channel_name} is highest converting. "
+                f"Verified dataset proves {top_channel_name} is #1 at {top_channel_rate:.2f}%, followed by {second_channel_name} at {second_channel_rate:.2f}%."
             )
         else:
-            verified_facts.append("Channel ranking verified: Campaign (23.13%) and Referral (20.77%) confirmed as top converting channels.")
+            verified_facts.append(f"Channel ranking verified: {top_channel_name} ({top_channel_rate:.2f}%) and {second_channel_name} ({second_channel_rate:.2f}%) confirmed as top converting channels.")
 
-        # Expense ranking contradiction check
-        if "legal is the largest" in combined_text or "legal at 21.4%" in combined_text or "legal fees represent 21" in combined_text:
+        # Dynamic expense ranking contradiction check
+        if "legal is the largest" in combined_text or "legal at 21.4%" in combined_text:
             discrepancies.append(
-                "Expense Contradiction: Stated Legal is largest at 21.4%. "
-                "Verified dataset proves Advertising is largest at 19.28% (Rs. 57.36L), Maintenance is 17.82%, Legal is 16.82%."
+                f"Expense Contradiction: Stated Legal is largest outlay. "
+                f"Verified dataset proves {top_exp_name} is largest at {top_exp_pct:.2f}%, followed by {second_exp_name} at {second_exp_pct:.2f}%."
             )
         else:
-            verified_facts.append("Expense category hierarchy verified: Advertising (19.28%) and Maintenance (17.82%) confirmed as top cost drivers.")
+            verified_facts.append(f"Expense category hierarchy verified: {top_exp_name} ({top_exp_pct:.2f}%) and {second_exp_name} ({second_exp_pct:.2f}%) confirmed as top cost drivers.")
 
         # Net margin check
         if "negative margin" in combined_text or "net loss" in combined_text:

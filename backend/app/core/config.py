@@ -1,4 +1,5 @@
 import os
+import secrets
 from typing import List
 from pathlib import Path
 
@@ -20,7 +21,7 @@ except ImportError:
 class Settings(BaseSettings):
     PROJECT_NAME: str = "AI-Powered Real Estate Decision Intelligence System"
     API_V1_STR: str = "/api"
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "super-secret-key-for-ai-decision-intelligence-system-2026")
+    SECRET_KEY: str = os.getenv("SECRET_KEY") or secrets.token_hex(32)
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
     

@@ -3,6 +3,8 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from ..core.database import get_db
+from ..core.security import get_current_user
+from ..models.user import User
 from ..services.kpi_calculator import KPICalculator
 from ..core.config import settings
 import httpx
@@ -17,7 +19,11 @@ class ChatResponse(BaseModel):
     source_metrics: dict
 
 @router.post("", response_model=ChatResponse)
-def ask_ai_chat(req: ChatRequest, db: Session = Depends(get_db)):
+def ask_ai_chat(
+    req: ChatRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     calculator = KPICalculator(db)
     kpis = calculator.get_summary_kpis()
     cities = calculator.get_city_performance()

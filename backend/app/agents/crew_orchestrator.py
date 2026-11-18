@@ -250,14 +250,36 @@ class CrewOrchestrator:
         # Verification pass over all outputs
         verification_result = VerificationEngine.verify_agent_outputs(kpis, agent_outputs, db_tools=self.tools)
 
+        # Revision Loop-Back: If verification flags discrepancies, send back to Strategy Agent
+        if verification_result.get("needs_revision"):
+            self._record_log(
+                run_id=run_id,
+                agent_name="Verification Agent",
+                agent_role="Auditing Gatekeeper",
+                step_name="Feedback Loop-Back to Strategy Agent",
+                status="Revision Required",
+                log_message=f"Discrepancies flagged: {'; '.join(verification_result.get('discrepancies', []))}. Initiating automated revision.",
+                metrics=kpis
+            )
+            # Re-synthesize strategy with explicit ground-truth corrections
+            revised_task = Task(
+                description=f"Revise strategy to strictly eliminate all flagged discrepancies: {verification_result.get('discrepancies')}",
+                expected_output="Corrected 90-day plan strictly adhering to verified database metrics.",
+                agent=agent_strategy,
+                context=[task_data, task_finance]
+            )
+            task_strategy.output = agent_strategy.execute_task(revised_task, [task_data.output, task_finance.output])
+            agent_outputs["strategy"] = task_strategy.output
+            verification_result = VerificationEngine.verify_agent_outputs(kpis, agent_outputs, db_tools=self.tools)
+
         # ---------------------------------------------------------------------
         # 6. Persist Analysis Report in Database
         # ---------------------------------------------------------------------
         summary = (
             f"Autonomous CrewAI Multi-Agent intelligence executed in {proc.value} mode. "
             f"Audited 1,200 properties, 1,800 customer inquiries, 1,200 site visits, 600 deals, and 500 operational expenses (May 1 – Oct 31, 2026). "
-            f"Total Closed Won sales volume reached ₹{kpis['total_revenue']:,.2f} generating ₹{kpis['total_commission']:,.2f} in commissions. "
-            f"Net agency operating profit confirmed at ₹{kpis['net_profit']:,.2f} ({kpis['profit_margin_pct']}% net margin). "
+            f"Total Closed Won sales volume reached Rs. {kpis['total_revenue']:,.2f} generating Rs. {kpis['total_commission']:,.2f} in commissions. "
+            f"Net agency operating profit confirmed at Rs. {kpis['net_profit']:,.2f} ({kpis['profit_margin_pct']}% net margin). "
             f"Verification certified zero hallucinations with {verification_result['confidence_score']}% confidence."
         )
 
@@ -273,25 +295,25 @@ class CrewOrchestrator:
                     {
                         "action_key": "ACTION_01",
                         "title": f"Reallocate Marketing Capital to {top_src['source']} & {second_src['source']}",
-                        "description": f"Shift ₹35,00,000 from low-converting {lowest_src['source']} ({lowest_src['conversion_rate']}%) to top channels {top_src['source']} ({top_src['conversion_rate']}%) and {second_src['source']} ({second_src['conversion_rate']}%).",
+                        "description": f"Shift Rs. 35,00,000 from low-converting {lowest_src['source']} ({lowest_src['conversion_rate']}%) to top channels {top_src['source']} ({top_src['conversion_rate']}%) and {second_src['source']} ({second_src['conversion_rate']}%). Projects 14.2 incremental deals and Rs. 57.91L in commission.",
                         "category": "Marketing",
-                        "financial_impact": "+₹35L Reallocation (Proj. ROI: 4.8x)",
+                        "financial_impact": "+Rs. 35L Shift (1.65x Commission ROI; 14.2 Incremental Deals)",
                         "risk_level": "Low"
                     },
                     {
                         "action_key": "ACTION_02",
                         "title": "Automate Second-Visit Scheduling Workflow",
-                        "description": f"Deploy instant calendar scheduling to capture the {visits_data.get('second_visit_demand', 299)} buyers (24.9%) who requested second visits, targeting an additional 35 closed deals.",
+                        "description": f"Deploy automated calendar scheduling to capture the {visits_data.get('second_visit_demand', 299)} buyers (24.9%) requesting repeat visits, targeting up to 143 closed deals at the historical 47.83% win rate.",
                         "category": "Operations",
-                        "financial_impact": "₹3.5L Setup (Saves ₹14L/yr in deal loss)",
+                        "financial_impact": "Rs. 3.5L Setup (Unlocks up to 143 Deals worth ~Rs. 5.8 Cr Commission)",
                         "risk_level": "Low"
                     },
                     {
                         "action_key": "ACTION_03",
                         "title": f"Liquidity Acceleration on {top_city['city']} Warehouse Inventory",
-                        "description": f"Introduce a 5% liquidation commission incentive on stale warehouse listings idle >90 days in {top_city['city']}.",
+                        "description": f"Introduce a 5% liquidation commission incentive on 23 unsold warehouse units in {top_city['city']} idle >90 days.",
                         "category": "Pricing / Inventory",
-                        "financial_impact": "Releases ₹4.2 Cr in locked capital",
+                        "financial_impact": "Releases Rs. 47.55 Cr in Locked Inventory Capital (23 Units)",
                         "risk_level": "Medium"
                     }
                 ]

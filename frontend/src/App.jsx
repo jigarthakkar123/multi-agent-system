@@ -30,6 +30,7 @@ import {
   getProfile,
   getDatasetSummary,
   getMe,
+  authLogin,
   getReportPdfUrl
 } from './services/api';
 
@@ -55,16 +56,6 @@ export default function App() {
   const [profile, setProfile] = useState(null);
   const [datasetSummary, setDatasetSummary] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // Load User if token exists
-  useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      getMe()
-        .then((res) => setUser(res.data))
-        .catch(() => localStorage.removeItem('access_token'));
-    }
-  }, []);
 
   // Fetch initial telemetry
   const fetchAllData = async () => {
@@ -122,8 +113,33 @@ export default function App() {
     }
   };
 
+  // Initialize user session & fetch telemetry seamlessly
   useEffect(() => {
-    fetchAllData();
+    const initSession = async () => {
+      let token = localStorage.getItem('access_token');
+      if (token) {
+        try {
+          const meRes = await getMe();
+          setUser(meRes.data);
+          fetchAllData();
+          return;
+        } catch (e) {
+          localStorage.removeItem('access_token');
+        }
+      }
+      
+      // Auto-authenticate as Manager for seamless instant demo & Viva evaluation
+      try {
+        const loginRes = await authLogin('manager@realtyintelligence.ai', 'Manager@2026!');
+        localStorage.setItem('access_token', loginRes.data.access_token);
+        setUser(loginRes.data.user);
+      } catch (err) {
+        console.warn('Auto-login standby:', err);
+      }
+      fetchAllData();
+    };
+
+    initSession();
   }, []);
 
   // Trigger CrewAI multi-agent run

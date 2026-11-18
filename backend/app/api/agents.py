@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from ..core.database import get_db
-from ..core.security import require_role
+from ..core.security import require_role, get_current_user
 from ..models.user import User
 from ..models.audit_log import AgentExecutionLog
 from ..models.report import AnalysisReport
@@ -26,8 +26,11 @@ def execute_multi_agent_system(
     return result
 
 @router.get("/status", response_model=List[AgentStatusOut])
-def get_agents_status(db: Session = Depends(get_db)):
-    """Returns the live operating status and last thoughts of all 6 specialized agents."""
+def get_agents_status(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Returns the live operating status, active step transitions, and last thoughts of all 6 specialized agents."""
     agents = [
         {"name": "Data Analyst Agent", "role": "Senior Real Estate Data Analyst", "task": "Auditing 1,200 property listings, 600 deals, price/sqft trends, and absorption rates"},
         {"name": "Marketing Agent", "role": "Real Estate Growth & Acquisition Strategist", "task": "Auditing 1,800 leads across 6 channels, identifying Campaign and Referral conversion advantages"},
@@ -46,7 +49,7 @@ def get_agents_status(db: Session = Depends(get_db)):
             .first()
         )
         status = "Completed" if last_log else "Idle"
-        last_thought = last_log.log_message[:200] + "..." if last_log else "Standing by for execution trigger."
+        last_thought = last_log.log_message[:240] + ("..." if len(last_log.log_message) > 240 else "") if last_log else "Standing by for execution trigger."
         
         results.append({
             "agent_name": a["name"],
@@ -64,6 +67,7 @@ def get_agent_logs(
     run_id: Optional[str] = None,
     agent_name: Optional[str] = None,
     limit: int = Query(50, ge=1, le=200),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Retrieves step-by-step logs for agent monitoring."""
@@ -75,7 +79,10 @@ def get_agent_logs(
     return query.order_by(AgentExecutionLog.created_at.desc()).limit(limit).all()
 
 @router.get("/runs")
-def get_previous_runs(db: Session = Depends(get_db)):
+def get_previous_runs(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Returns previous analysis runs with report IDs."""
     reports = db.query(AnalysisReport).order_by(AnalysisReport.created_at.desc()).limit(20).all()
     return [

@@ -176,9 +176,9 @@ export default function AgentsView({
                   <Icon className="w-5 h-5" />
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span className="text-[11px] font-medium text-emerald-400">
-                    {agent.status}
+                  <span className={`w-2 h-2 rounded-full ${runningAgents ? 'bg-amber-400 animate-ping' : 'bg-emerald-400 animate-pulse'}`}></span>
+                  <span className={`text-[11px] font-medium ${runningAgents ? 'text-amber-400 font-semibold' : 'text-emerald-400'}`}>
+                    {runningAgents ? 'Executing...' : agent.status}
                   </span>
                 </div>
               </div>

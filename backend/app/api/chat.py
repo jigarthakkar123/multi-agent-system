@@ -42,7 +42,35 @@ def ask_ai_chat(req: ChatRequest, db: Session = Depends(get_db)):
         f"- Largest Expense Category: {expenses[0]['category']} (₹{expenses[0]['amount']:,.2f})\n"
     )
 
-    # If Gemini API key is available
+    # 1. Try OpenAI if key is present
+    if settings.OPENAI_API_KEY:
+        try:
+            url = "https://api.openai.com/v1/chat/completions"
+            headers = {"Authorization": f"Bearer {settings.OPENAI_API_KEY}"}
+            payload = {
+                "model": "gpt-4o-mini",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are the AI Business Operations & Decision Intelligence Assistant for a real estate agency. "
+                            "Answer questions with professional precision using ONLY the ground-truth facts provided. "
+                            f"Ground-Truth Telemetry:\n{context}"
+                        )
+                    },
+                    {"role": "user", "content": req.message}
+                ],
+                "temperature": 0.2
+            }
+            resp = httpx.post(url, headers=headers, json=payload, timeout=20.0)
+            if resp.status_code == 200:
+                data = resp.json()
+                reply_text = data["choices"][0]["message"]["content"].strip()
+                return {"reply": reply_text, "source_metrics": kpis}
+        except Exception:
+            pass
+
+    # 2. Try Gemini if key is present
     if settings.GEMINI_API_KEY:
         try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={settings.GEMINI_API_KEY}"
@@ -50,7 +78,7 @@ def ask_ai_chat(req: ChatRequest, db: Session = Depends(get_db)):
                 "contents": [{
                     "parts": [{
                         "text": f"You are an AI Business Decision Intelligence Assistant for a real estate agency. "
-                                f"Answer the user's question accurately using ONLY this verified data:\n{context}\n\n"
+                                f"Answer accurately using ONLY this verified data:\n{context}\n\n"
                                 f"User Question: {req.message}"
                     }]
                 }]
@@ -63,7 +91,7 @@ def ask_ai_chat(req: ChatRequest, db: Session = Depends(get_db)):
         except Exception:
             pass
 
-    # Deterministic factual fallback if no external LLM configured
+    # 3. Deterministic factual fallback if no external LLM configured
     if "revenue" in question or "sales" in question or "volume" in question:
         reply = (
             f"Between May 1 and October 31, 2026, the agency generated a total closed sales volume of ₹{kpis['total_revenue']:,.2f} "

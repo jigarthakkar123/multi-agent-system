@@ -1,4 +1,5 @@
 import os
+import re
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -25,6 +26,13 @@ app = FastAPI(
     openapi_url="/openapi.json"
 )
 
+# Normalize duplicate slashes in incoming request paths
+@app.middleware("http")
+async def normalize_slashes_middleware(request: Request, call_next):
+    if "//" in request.scope["path"]:
+        request.scope["path"] = re.sub(r"/+", "/", request.scope["path"])
+    return await call_next(request)
+
 # Enable CORS for Netlify frontend, Render domains and local development
 app.add_middleware(
     CORSMiddleware,
@@ -34,8 +42,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include API Router
+# Include API Router under both /api and root fallback
 app.include_router(api_router, prefix=settings.API_V1_STR)
+app.include_router(api_router, prefix="", include_in_schema=False)
 
 @app.on_event("startup")
 def on_startup():

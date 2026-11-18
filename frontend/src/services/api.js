@@ -1,10 +1,29 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || (
-  typeof window !== 'undefined' && window.location.hostname === 'localhost'
-    ? '/api'
-    : 'https://multi-agent-system-fs68.onrender.com/api'
-);
+// Get and sanitize API Base URL to prevent double slashes
+const getApiBase = () => {
+  let envBase = import.meta.env.VITE_API_BASE_URL;
+  if (!envBase) {
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+      envBase = 'https://multi-agent-system-fs68.onrender.com';
+    } else {
+      return '/api';
+    }
+  }
+
+  // Remove trailing slashes
+  envBase = envBase.trim().replace(/\/+$/, '');
+  
+  // Ensure it ends with /api cleanly without //api
+  if (!envBase.endsWith('/api')) {
+    envBase = `${envBase}/api`;
+  }
+  
+  // Replace any duplicate slashes except after protocol
+  return envBase.replace(/([^:])\/\/+/g, '$1/');
+};
+
+const API_BASE = getApiBase();
 
 const api = axios.create({
   baseURL: API_BASE,

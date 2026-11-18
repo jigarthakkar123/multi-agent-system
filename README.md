@@ -12,6 +12,7 @@
 - **API Documentation / Swagger URL**: [https://multi-agent-system-fs68.onrender.com/docs](https://multi-agent-system-fs68.onrender.com/docs)
 - **GitHub Repository Link**: [https://github.com/jigarthakkar123/multi-agent-system](https://github.com/jigarthakkar123/multi-agent-system)
 - **Sample Downloadable PDF Report**: [Sample_Business_Intelligence_Report.pdf](Sample_Business_Intelligence_Report.pdf)
+- **Comprehensive Viva & Architecture Defense PDF**: [Real_Estate_AI_System_Viva_Preparation_Guide.pdf](Real_Estate_AI_System_Viva_Preparation_Guide.pdf)
 
 ---
 
@@ -125,14 +126,16 @@ The application includes the complete synthetic real estate dataset provided in 
 
 ---
 
-## 6. Real Calculated KPIs (Zero Hallucination)
-- **Total Closed Won Sales Volume**: **₹4,766,261,860.63 (~₹476.6 Crore)**
+## 6. Real Calculated KPIs (Zero Hallucination Ground Truth)
+- **Total Closed Won Sales Volume**: **₹4,766,261,860.63 (~₹476.63 Crore)** across 287 closed transactions
 - **Total Brokerage Commission Earned**: **₹117,037,779.49 (~₹11.70 Crore)**
-- **Total Operational Expenses**: **₹28,843,212.18 (~₹2.88 Crore)**
-- **Net Operating Agency Profit**: **₹88,194,567.31 (~₹8.82 Crore)**
-- **Operating Profit Margin**: **75.36%**
+- **Total Operational Expenses**: **₹29,751,912.79 (~₹2.98 Crore)** across 500 expense records
+- **Net Operating Agency Profit**: **₹87,285,866.70 (~₹8.73 Crore)**
+- **Net Operating Profit Margin**: **74.58%** $\left(\frac{₹87,285,866.70}{₹117,037,779.49} \times 100\right)$
 - **Closed Won Deals**: **287** out of 600 deals (47.83% Win Rate)
-- **Lead Conversion Rate**: **28.72%** (517 Converted of 1,800 Inquiries)
+- **Lead Conversion Rate**: **19.17%** (345 Converted out of 1,800 Total Inquiries)
+- **Property Absorption Rate**: **18.83%** (226 Sold out of 1,200 Inventory Units)
+- **Average Property Price per SqFt**: **₹8,490.35 / sqft**
 - **Highest Converting Channel**: **Referral (28.4%)**
 - **Largest Expense Category**: **Legal Fees (21.4%)** followed by Maintenance (18.6%)
 
@@ -162,8 +165,8 @@ The application includes the complete synthetic real estate dataset provided in 
 ### 1. Backend Setup
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/real-estate-decision-intelligence.git
-cd real-estate-decision-intelligence
+git clone https://github.com/jigarthakkar123/multi-agent-system.git
+cd multi-agent-system
 
 # Create and activate virtual environment
 python -m venv venv
@@ -217,9 +220,10 @@ For instant viva evaluation and login:
 4. Environment: `Python 3`
 5. Build Command: `pip install -r requirements.txt`
 6. Start Command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-7. Set Environment Variables:
-   - `SECRET_KEY`: `super-secret-key-2026`
-   - `GEMINI_API_KEY`: *(Optional - for enhanced LLM enrichment)*
+7. Set Environment Variables in Render Dashboard:
+   - `SECRET_KEY`: `<generate_strong_secret_key>` *(e.g. run `openssl rand -hex 32` - never commit plain secrets)*
+   - `GEMINI_API_KEY`: *(Optional - for enhanced LLM enrichment; system includes built-in verified engine)*
+   - `OPENAI_API_KEY`: *(Optional - for OpenAI GPT-4o-mini enrichment)*
    - `DATABASE_URL`: *(Optional - Render PostgreSQL connection string or defaults to SQLite)*
 
 ---
@@ -281,5 +285,21 @@ For instant viva evaluation and login:
 
 ---
 
-## 12. License & Author
-Developed as an Industry-Level Multi-Agent AI Application for Real Estate Decision Intelligence. Licensed under the MIT License.
+## 12. Project Demonstration Video Script (3-Minute Oral Defense Walkthrough)
+
+For live evaluation and examiner demonstration, record a 2 to 3-minute screen recording following this exact chronological walkthrough script:
+
+| Time | Screen / View | Narration & Key Demonstration Actions |
+|:---:|:---|:---|
+| **0:00 - 0:30** | **Login & JWT Security** | Open `https://multi-agent-system-tops-tech.netlify.app/`. Show the JWT authentication modal. Click **Manager Demo** (`manager@realtyintelligence.ai`). Explain BCrypt password hashing and role-based access control (RBAC). |
+| **0:30 - 1:15** | **Dashboard & Recharts Telemetry** | Present the live 6-month metrics: ₹476.63 Cr total sales volume, ₹11.70 Cr commission, ₹2.98 Cr expenses, and **74.58% net profit margin**. Hover over Recharts interactive components: Revenue vs Expense trends, Lead Funnel, Agent Leaderboard, and City distribution. |
+| **1:15 - 1:55** | **CrewAI Multi-Agent Execution** | Navigate to the **Multi-Agent Fleet** tab. Point out the 6 specialized agents: Data Analyst, Marketing, Finance, Operations, Strategy, and Verification. Show the execution status, tool outputs, and the 96.8% verification confidence score with zero-hallucination guarantee. |
+| **1:55 - 2:30** | **Human-in-the-Loop & Audit Trail** | Navigate to the **Human Approvals** section. Review `ACTION_01` (Reallocating ₹45 Lakhs to digital portals). Show the rationale and risk rating. Click **Authorize Action**, enter approval notes, and show the immutable status update from `Pending` to `Approved`. |
+| **2:30 - 3:00** | **AI Grounded Chat & Vector PDF Report** | Switch to the **AI Chat** tab. Ask: *"What was our total revenue and net margin?"* Point out how the response is strictly grounded in the database facts. Finally, click **Download PDF Report** to show the generated vector ReportLab document with dynamic headers and pagination. |
+
+> **Examiner Note**: A recorded video following this walkthrough can be accessed at: [Project Demonstration Video](https://github.com/jigarthakkar123/multi-agent-system) *(Record via Loom / OBS / Screen Recorder and paste your unlisted YouTube/Drive link here)*.
+
+---
+
+## 13. License & Author
+Developed by **Jigar Thakkar** as an Industry-Level Multi-Agent AI Application for Real Estate Decision Intelligence. Licensed under the MIT License.

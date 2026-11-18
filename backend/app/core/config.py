@@ -1,0 +1,35 @@
+import os
+from typing import List
+
+try:
+    from pydantic_settings import BaseSettings
+except ImportError:
+    from pydantic import BaseModel as BaseSettings
+
+class Settings(BaseSettings):
+    PROJECT_NAME: str = "AI-Powered Real Estate Decision Intelligence System"
+    API_V1_STR: str = "/api"
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "super-secret-key-for-ai-decision-intelligence-system-2026")
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    
+    # Database
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./real_estate_bi.db")
+    
+    # LLM Settings
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
+    DEFAULT_LLM_PROVIDER: str = os.getenv("DEFAULT_LLM_PROVIDER", "gemini")
+    
+    # CORS
+    BACKEND_CORS_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+        "https://ai-decision-intelligence-backend.onrender.com",
+        "*"
+    ]
+
+settings = Settings()

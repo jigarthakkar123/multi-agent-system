@@ -4,7 +4,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import List
 from ..core.database import get_db
-from ..core.security import get_current_user
+from ..core.security import get_current_user, get_current_user_pdf
 from ..models.user import User
 from ..models.report import AnalysisReport
 from ..schemas.report import ReportOut, ReportSummaryItem
@@ -35,7 +35,7 @@ def get_report(
 @router.get("/{report_id}/pdf")
 def download_report_pdf(
     report_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_pdf),
     db: Session = Depends(get_db)
 ):
     report = db.query(AnalysisReport).filter(AnalysisReport.id == report_id).first()

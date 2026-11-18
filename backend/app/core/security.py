@@ -57,13 +57,41 @@ def create_access_token(subject: Union[str, Any], expires_delta: Optional[timede
 
 def get_current_user(
     token: Optional[str] = Depends(oauth2_scheme),
-    token_query: Optional[str] = Query(None, alias="token"),
     db: Session = Depends(get_db)
 ):
+    """Strictly authenticates requests via Authorization: Bearer <token> header."""
     from ..models.user import User
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials. Authentication token required.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    if not token:
+        raise credentials_exception
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_email: str = payload.get("sub")
+        if user_email is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    user = db.query(User).filter(User.email == user_email).first()
+    if user is None:
+        raise credentials_exception
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return user
+
+def get_current_user_pdf(
+    token: Optional[str] = Depends(oauth2_scheme),
+    token_query: Optional[str] = Query(None, alias="token"),
+    db: Session = Depends(get_db)
+):
+    """Scoped exclusively to PDF generation routes to allow direct browser download triggers."""
+    from ..models.user import User
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials for report download.",
         headers={"WWW-Authenticate": "Bearer"},
     )
     auth_token = token or token_query

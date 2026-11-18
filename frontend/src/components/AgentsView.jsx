@@ -53,17 +53,17 @@ export default function AgentsView({
     'Finance Agent': {
       color: 'border-emerald-500/40 text-emerald-400 bg-emerald-500/10',
       responsibilities: [
-        'Audit ₹476+ Cr sales volume and net brokerage commissions',
-        'Evaluate ₹2.8+ Cr operational expenses across 6 cost heads',
-        'Flag capital locked in slow-moving warehouse/industrial assets'
+        'Audit Rs. 11.70 Cr commissions and Rs. 2.98 Cr expenses (500 records)',
+        'Verify 74.58% net agency operating margin and cost breakdown',
+        'Audit Advertising (19.28%) and Maintenance (17.82%) cost drivers'
       ]
     },
     'Operations Agent': {
       color: 'border-amber-500/40 text-amber-400 bg-amber-500/10',
       responsibilities: [
         'Audit 55 active sales brokers and 1,200 site visits',
-        'Detect 4.2-day site visit scheduling latency bottleneck',
-        'Propose automated sub-2hr WhatsApp dispatch workflows'
+        'Evaluate 299 repeat-visit requests and 331 expected offers',
+        'Top 10 brokers generate 31.16% of all agency commissions'
       ]
     },
     'Strategy Agent': {
@@ -71,7 +71,7 @@ export default function AgentsView({
       responsibilities: [
         'Synthesize cross-agent findings into a 90-day turnaround blueprint',
         'Structure consequential business actions for Human Approval',
-        'Forecast revenue impact and capital reallocation levers'
+        'Propose Rs. 35L capital reallocation to Campaign and Referral channels'
       ]
     },
     'Verification Agent': {
@@ -79,7 +79,7 @@ export default function AgentsView({
       responsibilities: [
         'Cross-verify numerical metrics against raw database records',
         'Detect LLM hallucinations and flag contradictory claims',
-        'Issue audited Confidence Score (96.8%) and report approval'
+        'Issue audited Confidence Score (99.0%) and zero-hallucination certificate'
       ]
     }
   };

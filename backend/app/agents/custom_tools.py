@@ -43,3 +43,13 @@ class RealEstateAnalyticsTools:
         """Returns inventory units, average pricing, and sold units by property type."""
         props = self.calculator.get_property_type_distribution()
         return json.dumps(props, indent=2)
+
+    def get_site_visit_analytics(self) -> str:
+        """Returns empirical site visit outcomes (Offer Expected, Second Visit, etc.) and customer feedbacks."""
+        analytics = self.calculator.get_site_visit_analytics()
+        return json.dumps(analytics, indent=2)
+
+    def get_broker_concentration(self) -> str:
+        """Returns top broker concentration metrics, commission percentages, and top broker IDs."""
+        conc = self.calculator.get_broker_concentration()
+        return json.dumps(conc, indent=2)

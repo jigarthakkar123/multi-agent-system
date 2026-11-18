@@ -93,4 +93,10 @@ export const getReportPdfUrl = (id) => `${API_BASE}/reports/${id}/pdf`;
 // AI Business Chat
 export const sendChatMessage = (message) => api.post('/chat', { message });
 
+// User Management (Admin RBAC)
+export const getUsers = () => api.get('/users');
+export const updateUserRole = (userId, role) => api.patch(`/users/${userId}/role`, { role });
+export const updateUserStatus = (userId, is_active) => api.patch(`/users/${userId}/status`, { is_active });
+export const deleteUser = (userId) => api.delete(`/users/${userId}`);
+
 export default api;

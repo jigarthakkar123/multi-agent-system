@@ -7,10 +7,12 @@ from .agents import router as agents_router
 from .approvals import router as approvals_router
 from .reports import router as reports_router
 from .chat import router as chat_router
+from .users import router as users_router
 
 api_router = APIRouter()
 
 api_router.include_router(auth_router)
+api_router.include_router(users_router)
 api_router.include_router(profile_router)
 api_router.include_router(dataset_router)
 api_router.include_router(analytics_router)

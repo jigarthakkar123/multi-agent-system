@@ -258,26 +258,26 @@ def build_pdf(filename="Real_Estate_AI_System_Viva_Preparation_Guide.pdf"):
         [
             Paragraph("<b>1. Data Analyst</b>", body_style),
             Paragraph("Senior Real Estate Data Analyst & Market Specialist", body_style),
-            Paragraph("Analyzes 1,200 property listings & 600 deals; calculates ₹476.63 Cr sales volume, absorption rate (18.83%), and price/sqft (₹8,490/sqft).", body_style),
+            Paragraph("Analyzes 1,200 property listings & 600 deals; calculates Rs. 476.63 Cr sales volume, absorption rate (18.83%), and price/sqft (Rs. 8,490/sqft).", body_style),
             Paragraph("get_core_kpis, get_city_market_data, get_property_type_absorption", body_style)
         ],
         [
             Paragraph("<b>2. Marketing</b>", body_style),
             Paragraph("Customer Acquisition & Funnel Strategist", body_style),
-            Paragraph("Evaluates 1,800 leads across 6 channels; detects Referral as top channel (28.4%) and identifies CAC at ₹86,237. Recommends ₹45L digital shift.", body_style),
+            Paragraph("Evaluates 1,800 leads across 6 channels; detects Campaign as top channel (23.13%) & Referral (20.77%); CAC at Rs. 86,237. Recommends Rs. 35L shift to top channels.", body_style),
             Paragraph("get_lead_acquisition_and_funnel, get_summary_kpis", body_style)
         ],
         [
             Paragraph("<b>3. Finance</b>", body_style),
             Paragraph("Chief Financial Controller & Risk Analyst", body_style),
-            Paragraph("Audits ₹11.70 Cr gross commission vs ₹2.98 Cr operational expenses; calculates 74.58% net profit margin; flags legal fee overhead (21.4%).", body_style),
+            Paragraph("Audits Rs. 11.70 Cr gross commission vs Rs. 2.98 Cr operational expenses (500 records); calculates 74.58% net margin; Advertising is largest cost (19.28%).", body_style),
             Paragraph("get_monthly_financial_trends, get_expense_breakdown", body_style)
         ],
         [
             Paragraph("<b>4. Operations</b>", body_style),
             Paragraph("Head of Broker Network & Field Efficiency", body_style),
-            Paragraph("Audits 55 sales brokers & 1,200 site visits; detects 4.2-day scheduling lag causing 28% drop-off; proposes sub-2hr WhatsApp dispatching.", body_style),
-            Paragraph("get_agent_operational_productivity, site_visit_logs", body_style)
+            Paragraph("Audits 55 brokers & 1,200 visits; captures 299 repeat-visit requests (24.9%) & 331 expected offers; top 10 brokers generate 31.16% of commissions.", body_style),
+            Paragraph("get_agent_operational_productivity, get_site_visit_analytics", body_style)
         ],
         [
             Paragraph("<b>5. Strategy</b>", body_style),
@@ -343,25 +343,25 @@ def build_pdf(filename="Real_Estate_AI_System_Viva_Preparation_Guide.pdf"):
         ["Action Key", "Title & Strategic Action", "Category", "Financial Impact", "Risk", "Status"],
         [
             Paragraph("<b>ACTION_01</b>", body_style),
-            Paragraph("Reallocate ₹45,00,000 from offline print to digital property portals in Mumbai and Pune.", body_style),
+            Paragraph("Reallocate Rs. 35,00,000 to top-converting Campaign & Referral channels.", body_style),
             Paragraph("Marketing", body_style),
-            Paragraph("+₹45L Reallocation (Proj. ROI: 4.8x)", body_style),
+            Paragraph("+Rs. 35L Shift (Proj. ROI: 4.8x)", body_style),
             Paragraph("Low", body_style),
             Paragraph("<font color='#D97706'><b>Pending</b></font>", body_style)
         ],
         [
             Paragraph("<b>ACTION_02</b>", body_style),
-            Paragraph("Deploy automated sub-2hr WhatsApp calendar dispatching to eliminate 4.2-day site visit latency.", body_style),
+            Paragraph("Automate second-visit scheduling to convert 299 pending buyer requests.", body_style),
             Paragraph("Operations", body_style),
-            Paragraph("₹3.5L Setup (Saves ₹14L/yr)", body_style),
+            Paragraph("Rs. 3.5L Setup (Saves Rs. 14L/yr)", body_style),
             Paragraph("Low", body_style),
             Paragraph("<font color='#D97706'><b>Pending</b></font>", body_style)
         ],
         [
             Paragraph("<b>ACTION_03</b>", body_style),
-            Paragraph("Apply 6% liquidation incentive on stale warehouse listings idle >90 days in Bharuch & Anand.", body_style),
+            Paragraph("Apply 5% liquidation incentive on stale warehouse listings idle >90 days in Bharuch.", body_style),
             Paragraph("Pricing / Inventory", body_style),
-            Paragraph("Releases ₹4.2 Cr in liquidity", body_style),
+            Paragraph("Releases Rs. 4.2 Cr in liquidity", body_style),
             Paragraph("Medium", body_style),
             Paragraph("<font color='#D97706'><b>Pending</b></font>", body_style)
         ]
@@ -394,19 +394,19 @@ def build_pdf(filename="Real_Estate_AI_System_Viva_Preparation_Guide.pdf"):
         [
             Paragraph("<b>Total Sales Volume</b>", body_style),
             Paragraph("SUM(sale_price) WHERE deal_status = 'Closed Won'", body_style),
-            Paragraph("<b>₹ 4,766,261,860.63</b> (~₹476.6 Cr)", body_style),
+            Paragraph("<b>Rs. 4,766,261,860.63</b> (~Rs. 476.63 Cr)", body_style),
             Paragraph("Gross transaction value of all successfully closed property acquisitions.", body_style)
         ],
         [
             Paragraph("<b>Total Commission</b>", body_style),
             Paragraph("SUM(sale_price * commission_rate) WHERE deal_status = 'Closed Won'", body_style),
-            Paragraph("<b>₹ 117,037,779.49</b> (~₹11.70 Cr)", body_style),
+            Paragraph("<b>Rs. 117,037,779.49</b> (~Rs. 11.70 Cr)", body_style),
             Paragraph("Net agency revenue earned across all completed transactions.", body_style)
         ],
         [
             Paragraph("<b>Operating Profit</b>", body_style),
             Paragraph("Total Commission - Total Operational Expenses", body_style),
-            Paragraph("<b>₹ 87,285,866.70</b> (~₹8.73 Cr)", body_style),
+            Paragraph("<b>Rs. 87,285,866.70</b> (~Rs. 8.73 Cr)", body_style),
             Paragraph("Operating earnings before taxes and corporate capital expenditures.", body_style)
         ],
         [
@@ -436,7 +436,7 @@ def build_pdf(filename="Real_Estate_AI_System_Viva_Preparation_Guide.pdf"):
         [
             Paragraph("<b>Avg Price per SqFt</b>", body_style),
             Paragraph("AVG(asking_price / area_sqft) across valid listings", body_style),
-            Paragraph("<b>₹ 8,490.35 / sqft</b>", body_style),
+            Paragraph("<b>Rs. 8,490.35 / sqft</b>", body_style),
             Paragraph("Macro real estate pricing density across Western India metropolitan hubs.", body_style)
         ]
     ]
@@ -519,11 +519,11 @@ def build_pdf(filename="Real_Estate_AI_System_Viva_Preparation_Guide.pdf"):
         ),
         (
             "Q4. What is the Human-in-the-Loop (HITL) approval workflow?",
-            "Enterprise compliance dictates that high-consequence business actions—such as reallocating ₹45 Lakhs in marketing budget—must never execute automatically. The Strategy Agent formulates the proposal, the Verification Agent validates feasibility, and the item enters the `human_approvals` queue with status 'Pending'. A human manager reviews the risk score and financial impact on the React dashboard, then clicks 'Authorize Action' or 'Reject', permanently logging their identity and decision notes in the database."
+            "Enterprise compliance dictates that high-consequence business actions—such as reallocating Rs. 35 Lakhs in marketing budget—must never execute automatically. The Strategy Agent formulates the proposal, the Verification Agent validates feasibility, and the item enters the `human_approvals` queue with status 'Pending'. A human manager reviews the risk score and financial impact on the React dashboard, then clicks 'Authorize Action' or 'Reject', permanently logging their identity and decision notes in the database."
         ),
         (
             "Q5. What were the key business findings from your Real Estate dataset?",
-            "Across 1,200 listings and 600 deals (May–Oct 2026), the agency achieved ₹476.63 Cr in closed sales volume and ₹11.70 Cr in brokerage commissions. Operational expenses were ₹2.98 Cr, yielding a net profit of ₹8.73 Cr (74.58% operating margin). Mumbai was the top market (₹68.7 Cr). Referrals were the highest-converting lead source (28.4%), while walk-ins had high drop-off. A critical operational bottleneck was identified: an average 4.2-day delay in scheduling site visits."
+            "Across 1,200 listings and 600 deals (May–Oct 2026), the agency achieved Rs. 476.63 Cr in closed sales volume and Rs. 11.70 Cr in brokerage commissions. Operational expenses were Rs. 2.98 Cr across 500 records, yielding a net operating profit of Rs. 8.73 Cr (74.58% operating margin). Bharuch was the top grossing market (Rs. 73.95 Cr), followed by Pune (Rs. 57.57 Cr). Campaign was the highest-converting lead source (23.13%), followed by Referral (20.77%). Site visits revealed strong buyer demand with 299 repeat-visit requests (24.9%) and 331 expected offers."
         ),
         (
             "Q6. How do Sequential and Hierarchical agent execution workflows differ?",
@@ -535,7 +535,7 @@ def build_pdf(filename="Real_Estate_AI_System_Viva_Preparation_Guide.pdf"):
         ),
         (
             "Q8. How does the AI Business Chat work without hallucinating?",
-            "The `/api/chat` endpoint pulls real-time ground-truth metrics from `KPICalculator` and injects them as a verified system context into the LLM prompt. The LLM is instructed to answer strictly using the provided telemetry. If the user asks about revenue, it cites ₹476.63 Cr; if asked about lead channels, it cites Referral (28.4%). A rule-based fallback engine also guarantees instant factual answers even if offline."
+            "The `/api/chat` endpoint pulls real-time ground-truth metrics from `KPICalculator` and injects them as a verified system context into the LLM prompt. The LLM is instructed to answer strictly using the provided telemetry. If the user asks about revenue, it cites Rs. 476.63 Cr; if asked about lead channels, it cites Campaign (23.13%) and Referral (20.77%). A rule-based fallback engine also guarantees instant factual answers even if offline."
         ),
         (
             "Q9. Why did you use ReportLab instead of client-side HTML-to-PDF libraries?",

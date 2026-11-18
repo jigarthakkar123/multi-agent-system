@@ -116,11 +116,15 @@ def on_startup():
     finally:
         db.close()
 
+import logging
+logger = logging.getLogger("uvicorn.error")
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Internal server error processing {request.method} {request.url.path}: {exc}", exc_info=True)
     return JSONResponse(
         status_code=500,
-        content={"detail": f"Internal Server Error: {str(exc)}", "path": str(request.url)}
+        content={"detail": "An internal server error occurred. Please contact the administrator.", "path": str(request.url.path)}
     )
 
 @app.get("/health", tags=["Health"])

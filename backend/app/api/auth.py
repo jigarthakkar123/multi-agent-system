@@ -14,11 +14,14 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=400, detail="A user with this email already exists")
     
+    # Enforce RBAC security: Public registration cannot grant 'admin' privileges
+    assigned_role = user_in.role if user_in.role in ["manager", "analyst", "agent"] else "manager"
+    
     user = User(
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
         full_name=user_in.full_name or user_in.email.split("@")[0].capitalize(),
-        role=user_in.role or "manager"
+        role=assigned_role
     )
     db.add(user)
     db.commit()

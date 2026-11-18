@@ -9,6 +9,7 @@ import ApprovalsView from './components/ApprovalsView';
 import ReportsView from './components/ReportsView';
 import ChatView from './components/ChatView';
 import ProfileView from './components/ProfileView';
+import UsersAdminView from './components/UsersAdminView';
 import AuthModal from './components/AuthModal';
 
 import {
@@ -182,6 +183,7 @@ export default function App() {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           pendingApprovalsCount={pendingApprovalsCount}
+          user={user}
         />
 
         <main className="flex-1 p-6 overflow-y-auto max-h-[calc(100vh-61px)]">
@@ -239,6 +241,8 @@ export default function App() {
           )}
 
           {activeTab === 'chat' && <ChatView />}
+
+          {activeTab === 'users' && <UsersAdminView />}
 
           {activeTab === 'profile' && (
             <ProfileView

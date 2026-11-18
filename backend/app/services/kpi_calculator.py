@@ -263,3 +263,51 @@ class KPICalculator:
             })
             
         return sorted(results, key=lambda x: x["total_commission_earned"], reverse=True)[:limit]
+
+    def get_site_visit_analytics(self) -> dict:
+        """Calculates actual site visit outcomes and feedback distribution from 1,200 records."""
+        visits = self.db.query(SiteVisit).all()
+        total_visits = len(visits)
+        if total_visits == 0:
+            return {"total_visits": 0, "outcomes": {}, "feedbacks": {}}
+            
+        outcomes = {}
+        feedbacks = {}
+        for v in visits:
+            outcomes[v.visit_outcome] = outcomes.get(v.visit_outcome, 0) + 1
+            feedbacks[v.visit_feedback] = feedbacks.get(v.visit_feedback, 0) + 1
+            
+        outcomes_pct = {k: round(v / total_visits * 100, 2) for k, v in outcomes.items()}
+        feedbacks_pct = {k: round(v / total_visits * 100, 2) for k, v in feedbacks.items()}
+        
+        return {
+            "total_visits": total_visits,
+            "outcomes_count": outcomes,
+            "outcomes_pct": outcomes_pct,
+            "feedbacks_count": feedbacks,
+            "feedbacks_pct": feedbacks_pct,
+            "second_visit_demand": feedbacks.get("Requested Second Visit", 0),
+            "offer_expected_count": outcomes.get("Offer Expected", 0)
+        }
+
+    def get_broker_concentration(self) -> dict:
+        """Computes true concentration of sales and commission among top broker cohorts."""
+        leaderboard = self.get_agent_leaderboard(limit=100)
+        total_comm = sum([a["total_commission_earned"] for a in leaderboard])
+        total_deals = sum([a["deals_closed"] for a in leaderboard])
+        
+        top5_comm = sum([a["total_commission_earned"] for a in leaderboard[:5]])
+        top5_deals = sum([a["deals_closed"] for a in leaderboard[:5]])
+        
+        top10_comm = sum([a["total_commission_earned"] for a in leaderboard[:10]])
+        top10_deals = sum([a["deals_closed"] for a in leaderboard[:10]])
+        
+        return {
+            "total_brokers": len(leaderboard),
+            "top5_commission_pct": round((top5_comm / total_comm * 100) if total_comm > 0 else 0.0, 2),
+            "top5_deals_pct": round((top5_deals / total_deals * 100) if total_deals > 0 else 0.0, 2),
+            "top10_commission_pct": round((top10_comm / total_comm * 100) if total_comm > 0 else 0.0, 2),
+            "top10_deals_pct": round((top10_deals / total_deals * 100) if total_deals > 0 else 0.0, 2),
+            "top_broker_id": leaderboard[0]["agent_id"] if leaderboard else "N/A",
+            "top_broker_comm": leaderboard[0]["total_commission_earned"] if leaderboard else 0.0
+        }

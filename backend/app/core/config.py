@@ -40,8 +40,7 @@ class Settings(BaseSettings):
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5173",
         "https://multi-agent-system-tops-tech.netlify.app",
-        "https://multi-agent-system-fs68.onrender.com",
-        "*"
+        "https://multi-agent-system-fs68.onrender.com"
     ]
 
 settings = Settings()

@@ -11,7 +11,7 @@ import {
   Database
 } from 'lucide-react';
 
-export default function Sidebar({ activeTab, setActiveTab, pendingApprovalsCount = 0 }) {
+export default function Sidebar({ activeTab, setActiveTab, pendingApprovalsCount = 0, user = null }) {
   const navItems = [
     { id: 'overview', label: 'Executive Overview', icon: LayoutDashboard },
     { id: 'agents', label: 'Multi-Agent Center', icon: Bot, badge: '6 Agents' },
@@ -28,6 +28,16 @@ export default function Sidebar({ activeTab, setActiveTab, pendingApprovalsCount
     { id: 'chat', label: 'AI Business Chat', icon: MessageSquare },
     { id: 'profile', label: 'Profile & Dataset', icon: Database },
   ];
+
+  if (user && user.role === 'admin') {
+    navItems.push({
+      id: 'users',
+      label: 'User RBAC (Admin)',
+      icon: Settings,
+      badge: 'Admin',
+      badgeColor: 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+    });
+  }
 
   return (
     <aside className="w-64 min-h-[calc(100vh-61px)] glass-panel border-r border-slate-800/80 bg-slate-950/50 flex flex-col justify-between p-4">

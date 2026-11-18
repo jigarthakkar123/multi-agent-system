@@ -34,19 +34,23 @@ class DataProcessor:
         
         expenses_df = excel_file.parse(name_map.get("expenses", "Expenses"))
         
-        # Clean and standardize Properties
+        # Clean, validate, deduplicate and standardize Properties
         properties_df["property_id"] = properties_df["property_id"].astype(str).str.strip()
+        properties_df = properties_df.drop_duplicates(subset=["property_id"])
         properties_df["property_type"] = properties_df["property_type"].astype(str).str.strip()
         properties_df["city"] = properties_df["city"].astype(str).str.strip()
         properties_df["locality"] = properties_df["locality"].astype(str).str.strip()
         properties_df["bedrooms"] = pd.to_numeric(properties_df["bedrooms"], errors="coerce").fillna(0).astype(int)
         properties_df["area_sqft"] = pd.to_numeric(properties_df["area_sqft"], errors="coerce").fillna(0.0)
         properties_df["asking_price"] = pd.to_numeric(properties_df["asking_price"], errors="coerce").fillna(0.0)
+        properties_df.loc[properties_df["asking_price"] < 0, "asking_price"] = 0.0
+        properties_df.loc[properties_df["area_sqft"] < 0, "area_sqft"] = 0.0
         properties_df["listing_date"] = pd.to_datetime(properties_df["listing_date"]).dt.date
         properties_df["listing_status"] = properties_df["listing_status"].astype(str).str.strip()
         
-        # Clean and standardize Leads
+        # Clean, validate, deduplicate and standardize Leads
         leads_df["lead_id"] = leads_df["lead_id"].astype(str).str.strip()
+        leads_df = leads_df.drop_duplicates(subset=["lead_id"])
         leads_df["lead_name"] = leads_df["lead_name"].astype(str).str.strip()
         leads_df["property_type_interest"] = leads_df["property_type_interest"].astype(str).str.strip()
         leads_df["city"] = leads_df["city"].astype(str).str.strip()
@@ -54,11 +58,14 @@ class DataProcessor:
         leads_df["inquiry_date"] = pd.to_datetime(leads_df["inquiry_date"]).dt.date
         leads_df["budget_min"] = pd.to_numeric(leads_df["budget_min"], errors="coerce").fillna(0.0)
         leads_df["budget_max"] = pd.to_numeric(leads_df["budget_max"], errors="coerce").fillna(0.0)
+        leads_df.loc[leads_df["budget_min"] < 0, "budget_min"] = 0.0
+        leads_df.loc[leads_df["budget_max"] < 0, "budget_max"] = 0.0
         leads_df["lead_status"] = leads_df["lead_status"].astype(str).str.strip()
         leads_df["phone"] = leads_df["phone"].astype(str).str.strip()
         
         # Clean and standardize Site Visits
         visits_df["visit_id"] = visits_df["visit_id"].astype(str).str.strip()
+        visits_df = visits_df.drop_duplicates(subset=["visit_id"])
         visits_df["lead_id"] = visits_df["lead_id"].astype(str).str.strip()
         visits_df["property_id"] = visits_df["property_id"].astype(str).str.strip()
         visits_df["visit_date"] = pd.to_datetime(visits_df["visit_date"]).dt.date
@@ -68,16 +75,19 @@ class DataProcessor:
         
         # Clean and standardize Deals
         deals_df["deal_id"] = deals_df["deal_id"].astype(str).str.strip()
+        deals_df = deals_df.drop_duplicates(subset=["deal_id"])
         deals_df["lead_id"] = deals_df["lead_id"].astype(str).str.strip()
         deals_df["property_id"] = deals_df["property_id"].astype(str).str.strip()
         deals_df["deal_date"] = pd.to_datetime(deals_df["deal_date"]).dt.date
         deals_df["deal_status"] = deals_df["deal_status"].astype(str).str.strip()
         deals_df["sale_price"] = pd.to_numeric(deals_df["sale_price"], errors="coerce").fillna(0.0)
+        deals_df.loc[deals_df["sale_price"] < 0, "sale_price"] = 0.0
         deals_df["commission_rate"] = pd.to_numeric(deals_df["commission_rate"], errors="coerce").fillna(0.02)
         deals_df["agent_id"] = deals_df["agent_id"].astype(str).str.strip()
         
         # Clean and standardize Agent Performance
         perf_df["performance_id"] = perf_df["performance_id"].astype(str).str.strip()
+        perf_df = perf_df.drop_duplicates(subset=["performance_id"])
         perf_df["agent_id"] = perf_df["agent_id"].astype(str).str.strip()
         perf_df["period_month"] = perf_df["period_month"].astype(str).str.strip()
         perf_df["calls_made"] = pd.to_numeric(perf_df["calls_made"], errors="coerce").fillna(0).astype(int)

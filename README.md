@@ -13,6 +13,7 @@
 - **GitHub Repository Link**: [https://github.com/jigarthakkar123/multi-agent-system](https://github.com/jigarthakkar123/multi-agent-system)
 - **Sample Downloadable PDF Report**: [Sample_Business_Intelligence_Report.pdf](Sample_Business_Intelligence_Report.pdf)
 - **Comprehensive Viva & Architecture Defense PDF**: [Real_Estate_AI_System_Viva_Preparation_Guide.pdf](Real_Estate_AI_System_Viva_Preparation_Guide.pdf)
+- **Database Schema & ERD Documentation**: [docs/DATABASE_SCHEMA_ERD.md](docs/DATABASE_SCHEMA_ERD.md)
 
 ---
 
@@ -236,7 +237,7 @@ For instant viva evaluation and login:
 | **2. Python FastAPI Backend Code** | `backend/` directory (FastAPI, SQLAlchemy, Pydantic, Uvicorn) | ✅ Complete |
 | **3. CrewAI Multi-Agent Fleet** | `backend/app/agents/` (6 specialized agents + orchestrator) | ✅ Complete |
 | **4. LLM Integration Configuration** | Configured via environment variables (keys never committed) | ✅ Complete |
-| **5. Database Schema & Sample Data** | Models in `models/`, seeded with 1,200 props, 1,800 leads, 600 deals, 500 expenses | ✅ Complete |
+| **5. Database Schema & Sample Data** | Schema & ERD in `docs/DATABASE_SCHEMA_ERD.md`, models in `models/`, seeded with 1,200 props, 1,800 leads, 600 deals, 500 expenses | ✅ Complete |
 | **6. GitHub Repository Link** | [https://github.com/jigarthakkar123/multi-agent-system](https://github.com/jigarthakkar123/multi-agent-system) | ✅ Live |
 | **7. Architecture Diagram** | Mermaid diagrams in Section 2 | ✅ Complete |
 | **8. API Documentation / Swagger URL** | [https://multi-agent-system-fs68.onrender.com/docs](https://multi-agent-system-fs68.onrender.com/docs) | ✅ Live |

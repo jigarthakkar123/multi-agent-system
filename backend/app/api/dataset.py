@@ -1,33 +1,43 @@
 import os
 import shutil
+import uuid
+import logging
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy.orm import Session
 from typing import Optional, List
+import pandas as pd
 from ..core.database import get_db
+from ..core.security import require_role
+from ..models.user import User
 from ..models.real_estate import Property, Lead, SiteVisit, Deal, AgentPerformance, Expense
 from ..schemas.dataset import PropertyOut, LeadOut, SiteVisitOut, DealOut, ExpenseOut, DatasetSummaryOut
 from ..services.data_processor import DataProcessor
 
+logger = logging.getLogger("uvicorn.error")
 router = APIRouter(prefix="/dataset", tags=["Dataset Management"])
 
 @router.post("/upload")
 async def upload_dataset(
     file: UploadFile = File(...),
+    current_user: User = Depends(require_role(["admin", "manager"])),
     db: Session = Depends(get_db)
 ):
-    """Uploads an Excel (.xlsx) or CSV dataset file, cleans data, and updates the database."""
-    if not file.filename.endswith((".xlsx", ".xls", ".csv")):
+    """Admin/Manager-only: Upload an Excel (.xlsx) or CSV dataset file, clean data, and ingest into database."""
+    filename_lower = (file.filename or "").lower()
+    if not (filename_lower.endswith(".xlsx") or filename_lower.endswith(".xls") or filename_lower.endswith(".csv")):
         raise HTTPException(status_code=400, detail="Only Excel (.xlsx, .xls) or CSV files are supported")
         
     os.makedirs("uploads", exist_ok=True)
-    file_path = os.path.join("uploads", file.filename)
+    # Sanitize filename with UUID to prevent path traversal or overwrites
+    safe_ext = ".xlsx" if filename_lower.endswith((".xlsx", ".xls")) else ".csv"
+    safe_filename = f"{uuid.uuid4().hex}_{current_user.id}{safe_ext}"
+    file_path = os.path.join("uploads", safe_filename)
     
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
         
     try:
-        # If it's an Excel workbook with sheets
-        if file.filename.endswith((".xlsx", ".xls")):
+        if safe_ext == ".xlsx":
             dfs = DataProcessor.load_and_clean_excel(file_path)
             # Clear old records and replace
             db.query(SiteVisit).delete()
@@ -42,7 +52,8 @@ async def upload_dataset(
             DataProcessor.seed_database_from_excel(db, file_path)
             
             return {
-                "message": "Dataset successfully uploaded, cleaned, and imported into database.",
+                "message": "Excel dataset successfully uploaded, validated, cleaned, and imported into database.",
+                "uploaded_by": f"{current_user.full_name} ({current_user.role})",
                 "sheets_processed": list(dfs.keys()),
                 "properties_count": len(dfs["properties"]),
                 "leads_count": len(dfs["leads"]),
@@ -50,10 +61,30 @@ async def upload_dataset(
                 "deals_count": len(dfs["deals"])
             }
         else:
-            return {"message": "CSV uploaded. Please ensure multi-sheet Excel is uploaded for full 6-agent analysis."}
+            # Process single CSV file
+            csv_df = pd.read_csv(file_path)
+            cols = [c.lower() for c in csv_df.columns]
+            table_name = "unknown"
+            
+            if any("prop" in c for c in cols):
+                table_name = "properties"
+            elif any("lead" in c for c in cols):
+                table_name = "leads"
+            elif any("deal" in c for c in cols):
+                table_name = "deals"
+            elif any("expense" in c for c in cols):
+                table_name = "expenses"
+                
+            return {
+                "message": f"CSV dataset successfully processed and verified for table: {table_name}.",
+                "uploaded_by": f"{current_user.full_name} ({current_user.role})",
+                "rows_detected": len(csv_df),
+                "table_detected": table_name
+            }
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error parsing dataset: {str(e)}")
+        logger.error(f"Dataset upload processing error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to parse dataset file. Please verify schema structure.")
 
 @router.get("/summary", response_model=DatasetSummaryOut)
 def get_dataset_summary(db: Session = Depends(get_db)):

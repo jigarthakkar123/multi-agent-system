@@ -11,7 +11,27 @@ import {
 } from 'lucide-react';
 
 export default function KPIStats({ kpis }) {
-  if (!kpis) return null;
+  if (!kpis) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+          <div
+            key={n}
+            className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 animate-pulse flex flex-col justify-between h-32"
+          >
+            <div className="flex justify-between items-start">
+              <div className="h-4 bg-slate-800 rounded w-2/3"></div>
+              <div className="h-8 w-8 bg-slate-800 rounded-xl"></div>
+            </div>
+            <div>
+              <div className="h-6 bg-slate-700 rounded w-1/2 mb-2"></div>
+              <div className="h-3 bg-slate-800 rounded w-3/4"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   const formatCurrency = (val) => {
     if (!val && val !== 0) return '₹ 0';

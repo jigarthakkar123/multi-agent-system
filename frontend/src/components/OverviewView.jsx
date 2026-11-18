@@ -28,6 +28,19 @@ export default function OverviewView({
 
   return (
     <div className="space-y-6">
+      {/* Backend Connecting Callout (if Render service is waking up) */}
+      {!kpis && (
+        <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center gap-3 shadow-lg shadow-indigo-500/5 animate-pulse">
+          <div className="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin shrink-0"></div>
+          <div>
+            <div className="text-sm font-semibold text-indigo-300">Connecting to Live Render Backend Service...</div>
+            <p className="text-xs text-slate-400">
+              Render web services sleep during inactivity. Awakening service and loading dataset telemetry (May 1 – Oct 31, 2026)...
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Pending Human-in-the-Loop Approval Alert Callout */}
       {pendingApprovals && pendingApprovals.length > 0 && (
         <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg shadow-amber-500/5">

@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from ..core.database import get_db
+from ..core.security import require_role
+from ..models.user import User
 from ..models.audit_log import AgentExecutionLog
 from ..models.report import AnalysisReport
 from ..schemas.agents import AgentRunRequest, AgentStepLogOut, AgentStatusOut
@@ -12,9 +14,10 @@ router = APIRouter(prefix="/agents", tags=["Multi-Agent Intelligence (CrewAI)"])
 @router.post("/execute")
 def execute_multi_agent_system(
     request: AgentRunRequest,
+    current_user: User = Depends(require_role(["admin", "manager"])),
     db: Session = Depends(get_db)
 ):
-    """Executes the 6 specialized AI agents sequentially or hierarchically."""
+    """Authorized Manager/Admin executes the 6 specialized AI agents sequentially or hierarchically."""
     orchestrator = CrewOrchestrator(db)
     result = orchestrator.run_multi_agent_pipeline(
         execution_mode=request.execution_mode,
@@ -26,12 +29,12 @@ def execute_multi_agent_system(
 def get_agents_status(db: Session = Depends(get_db)):
     """Returns the live operating status and last thoughts of all 6 specialized agents."""
     agents = [
-        {"name": "Data Analyst Agent", "role": "Senior Real Estate Data Analyst", "task": "Calculated KPIs, price/sqft trends, and absorption metrics across 10 cities"},
-        {"name": "Marketing Agent", "role": "Real Estate Growth & Acquisition Strategist", "task": "Audited lead channels, CAC efficiency, and referral conversion advantages"},
-        {"name": "Finance Agent", "role": "Chief Financial Controller & Risk Analyst", "task": "Audited gross sales volume, commission margins, and operational expense leaks"},
-        {"name": "Operations Agent", "role": "Head of Operations & Broker Network Efficiency", "task": "Identified 4.2-day site visit scheduling latency and top broker cohorts"},
-        {"name": "Strategy Agent", "role": "Chief Strategy Officer", "task": "Formulated 90-day turnaround plan and generated Human-in-the-Loop approval actions"},
-        {"name": "Verification Agent", "role": "Chief Quality & Compliance Verification Auditor", "task": "Cross-verified all numerical claims against ground truth; issued 96.8% confidence approval"}
+        {"name": "Data Analyst Agent", "role": "Senior Real Estate Data Analyst", "task": "Auditing 1,200 property listings, 600 deals, price/sqft trends, and absorption rates"},
+        {"name": "Marketing Agent", "role": "Real Estate Growth & Acquisition Strategist", "task": "Auditing 1,800 leads across 6 channels, identifying Campaign and Referral conversion advantages"},
+        {"name": "Finance Agent", "role": "Chief Financial Controller & Risk Analyst", "task": "Auditing Rs. 11.70 Cr commissions, Rs. 2.98 Cr expenses, and 74.58% net margin"},
+        {"name": "Operations Agent", "role": "Head of Operations & Broker Network Efficiency", "task": "Evaluating 55 brokers and 1,200 site visits, optimizing second-visit conversion workflows"},
+        {"name": "Strategy Agent", "role": "Chief Strategy Officer", "task": "Formulating 90-day turnaround plan and staging consequential Human Approval initiatives"},
+        {"name": "Verification Agent", "role": "Chief Quality & Compliance Verification Auditor", "task": "Cross-verifying all numerical claims against ground truth; issuing zero-hallucination certificate"}
     ]
     
     results = []

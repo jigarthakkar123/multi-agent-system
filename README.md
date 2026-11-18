@@ -1,11 +1,17 @@
 # AI-Powered Smart Business Operations & Decision Intelligence System
 ## Real Estate Industry: Property & Sales Intelligence
 
-[![Architecture](https://img.shields.io/badge/Architecture-React.js%20%2B%20FastAPI%20%2B%20CrewAI%20%2B%20LLM-indigo)](https://github.com)
-[![Database](https://img.shields.io/badge/Database-PostgreSQL%20%2F%20SQLite-blue)](https://github.com)
-[![Dataset Coverage](https://img.shields.io/badge/Coverage-May%201%20--%20Oct%2031%2C%202026-emerald)](https://github.com)
-[![Verification](https://img.shields.io/badge/Audit-96.8%25%20Zero--Hallucination-teal)](https://github.com)
-[![License](https://img.shields.io/badge/License-MIT-slate)](https://github.com)
+[![Live Frontend](https://img.shields.io/badge/Live%20Frontend-Netlify-00C7B7?style=for-the-badge&logo=netlify)](https://multi-agent-system-tops-tech.netlify.app/)
+[![Live Backend](https://img.shields.io/badge/Live%20Backend-Render-46E3B7?style=for-the-badge&logo=render)](https://multi-agent-system-fs68.onrender.com/)
+[![Swagger Docs](https://img.shields.io/badge/API%20Docs-Swagger%20UI-85EA2D?style=for-the-badge&logo=swagger)](https://multi-agent-system-fs68.onrender.com/docs)
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/jigarthakkar123/multi-agent-system)
+
+### 🌐 Live Production Deployments
+- **Live Deployed Frontend URL (Netlify)**: [https://multi-agent-system-tops-tech.netlify.app/](https://multi-agent-system-tops-tech.netlify.app/)
+- **Live Deployed Backend URL (Render)**: [https://multi-agent-system-fs68.onrender.com/](https://multi-agent-system-fs68.onrender.com/)
+- **API Documentation / Swagger URL**: [https://multi-agent-system-fs68.onrender.com/docs](https://multi-agent-system-fs68.onrender.com/docs)
+- **GitHub Repository Link**: [https://github.com/jigarthakkar123/multi-agent-system](https://github.com/jigarthakkar123/multi-agent-system)
+- **Sample Downloadable PDF Report**: [Sample_Business_Intelligence_Report.pdf](Sample_Business_Intelligence_Report.pdf)
 
 ---
 
@@ -218,7 +224,26 @@ For instant viva evaluation and login:
 
 ---
 
-## 10. Marking Scheme & Rubric Mapping (100 / 100 Marks)
+## 10. Final Submission Requirements Checklist
+
+| Requirement | Submitted Item / Evidence | Status |
+|:---|:---|:---:|
+| **1. React.js Frontend Code** | `frontend/` directory (Vite, React 19, Tailwind CSS v4, Recharts) | ✅ Complete |
+| **2. Python FastAPI Backend Code** | `backend/` directory (FastAPI, SQLAlchemy, Pydantic, Uvicorn) | ✅ Complete |
+| **3. CrewAI Multi-Agent Fleet** | `backend/app/agents/` (6 specialized agents + orchestrator) | ✅ Complete |
+| **4. LLM Integration Configuration** | Configured via environment variables (keys never committed) | ✅ Complete |
+| **5. Database Schema & Sample Data** | Models in `models/`, seeded with 1,200 props, 1,800 leads, 600 deals, 500 expenses | ✅ Complete |
+| **6. GitHub Repository Link** | [https://github.com/jigarthakkar123/multi-agent-system](https://github.com/jigarthakkar123/multi-agent-system) | ✅ Live |
+| **7. Architecture Diagram** | Mermaid diagrams in Section 2 | ✅ Complete |
+| **8. API Documentation / Swagger URL** | [https://multi-agent-system-fs68.onrender.com/docs](https://multi-agent-system-fs68.onrender.com/docs) | ✅ Live |
+| **9. Live Deployed Frontend URL** | [https://multi-agent-system-tops-tech.netlify.app/](https://multi-agent-system-tops-tech.netlify.app/) | ✅ Live |
+| **10. Live Deployed Backend URL** | [https://multi-agent-system-fs68.onrender.com/](https://multi-agent-system-fs68.onrender.com/) | ✅ Live |
+| **11. Sample Generated BI PDF Report** | [Sample_Business_Intelligence_Report.pdf](Sample_Business_Intelligence_Report.pdf) | ✅ Complete |
+| **12. Project Demonstration & Viva** | Comprehensive Q&A and Demo walkthrough in Section 12 | ✅ Complete |
+
+---
+
+## 11. Marking Scheme & Rubric Mapping (100 / 100 Marks)
 
 | No. | Evaluation Parameter | Marks | Implementation Evidence in Codebase |
 |:---:|:---|:---:|:---|

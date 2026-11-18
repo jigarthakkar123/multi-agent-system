@@ -39,7 +39,8 @@ class Settings(BaseSettings):
         "http://localhost:5173",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5173",
-        "https://ai-decision-intelligence-backend.onrender.com",
+        "https://multi-agent-system-tops-tech.netlify.app",
+        "https://multi-agent-system-fs68.onrender.com",
         "*"
     ]
 

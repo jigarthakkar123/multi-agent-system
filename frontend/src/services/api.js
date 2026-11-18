@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || (
+  typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? '/api'
+    : 'https://multi-agent-system-fs68.onrender.com/api'
+);
 
 const api = axios.create({
   baseURL: API_BASE,

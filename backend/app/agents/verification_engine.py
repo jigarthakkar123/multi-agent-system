@@ -55,7 +55,8 @@ class VerificationEngine:
         cls,
         ground_truth_kpis: Dict[str, Any],
         agent_outputs: Dict[str, str],
-        db_tools = None
+        db_tools = None,
+        live_telemetry: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         import json
         discrepancies: List[str] = []
@@ -84,7 +85,7 @@ class VerificationEngine:
             round(actual_win_rate, 2),
             round(comm_yield, 2),
             5.0, 10.0, 15.0, 20.0, 25.0,        # Strategic incentives
-            95.0, 96.8, 98.0, 99.0, 99.5, 100.0 # Confidence thresholds
+            95.0, 96.8, 98.0, 99.0, 99.5, 99.8, 100.0 # Confidence thresholds
         }
 
         valid_currencies = {
@@ -93,15 +94,19 @@ class VerificationEngine:
             round(actual_exp, 2),
             round(actual_profit, 2),
             round(actual_price_sqft, 2),
-            3500000.0, 475483535.03 # Strategic initiatives (Reallocation, Unsold inventory capital)
+            3500000.0 # Strategic marketing reallocation budget
         }
 
-        # Dynamically append derived strategic commission yields
-        closed_won = float(ground_truth_kpis.get("closed_won_deals", 287))
-        avg_deal_comm = (actual_comm / closed_won) if closed_won else 407797.14
-        valid_currencies.add(round(12.7 * avg_deal_comm, 2))
-        valid_currencies.add(round(14.2 * avg_deal_comm, 2))
-        valid_currencies.add(round(143 * avg_deal_comm, 2))
+        # Dynamically append derived strategic parameters directly from live telemetry
+        if live_telemetry:
+            for field in ["unsold_warehouse_capital", "incremental_comm", "repeat_deal_comm", "top_broker_comm", "top_city_rev"]:
+                val = live_telemetry.get(field)
+                if val:
+                    valid_currencies.add(round(float(val), 2))
+            for pct_field in ["top_channel_rate", "second_channel_rate", "top_expense_pct", "second_expense_pct", "top_10_broker_pct", "comm_roi"]:
+                val = live_telemetry.get(pct_field)
+                if val:
+                    valid_percentages.add(round(float(val), 2))
 
         top_channel_name = "Campaign"
         top_channel_rate = 23.13
@@ -247,11 +252,21 @@ class VerificationEngine:
         verified_facts.append("Verified Operations: 299 repeat-visit requests (24.9%) and 331 expected offers (27.58%) from 1,200 site visits.")
 
         # ---------------------------------------------------------------------
-        # 3. Dynamic Empirical Confidence Scoring
+        # 3. Dynamic Empirical Confidence Scoring (Independently Earned)
         # ---------------------------------------------------------------------
-        # Base confidence starts at 100%, deducts points for any discrepancy or unverified figure
-        confidence = 100.0 - (len(discrepancies) * 12.5) - (len(warnings) * 4.0)
-        confidence_score = max(50.0, min(99.5, round(confidence, 1)))
+        # Calculated from the exact empirical ratio of verified figures to total extracted figures
+        total_figures = extracted_figures_count
+        if total_figures > 0:
+            passed_figures = max(0, total_figures - len(unverified_figures))
+            earned_accuracy = (passed_figures / total_figures) * 100.0
+        else:
+            passed_figures = 0
+            earned_accuracy = 100.0
+
+        # Structural penalty for logical/semantic contradictions
+        contradiction_penalty = (len(discrepancies) * 10.0) + (len(warnings) * 3.0)
+        raw_score = earned_accuracy - contradiction_penalty
+        confidence_score = max(50.0, min(99.8, round(raw_score, 1)))
 
         needs_revision = len(discrepancies) > 0 or confidence_score < 85.0
         status = "Flagged for Revision" if needs_revision else "Verified & Approved"
@@ -265,6 +280,7 @@ class VerificationEngine:
             "warnings": warnings,
             "verified_facts": verified_facts,
             "figures_audited_count": extracted_figures_count,
+            "figures_passed_count": passed_figures,
             "audit_timestamp": datetime.utcnow().isoformat() + "Z",
             "auditor": "Verification Agent (Regex & Multi-Table Empirical Auditor)"
         }

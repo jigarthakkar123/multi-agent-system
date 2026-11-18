@@ -4,11 +4,22 @@ import time
 from datetime import datetime
 from sqlalchemy.orm import Session
 from .crewai_engine import Agent, Task, Crew, Process
-from .custom_tools import RealEstateAnalyticsTools
+from .custom_tools import (
+    RealEstateAnalyticsTools,
+    get_core_kpis_tool,
+    get_city_market_data_tool,
+    get_lead_acquisition_and_funnel_tool,
+    get_expense_breakdown_tool,
+    get_agent_operational_productivity_tool,
+    get_site_visit_analytics_tool,
+    get_property_type_absorption_tool,
+    get_broker_concentration_tool
+)
 from .verification_engine import VerificationEngine
 from ..models.report import AnalysisReport
 from ..models.approval import HumanApproval
 from ..models.audit_log import AgentExecutionLog
+from ..models.real_estate import Property
 from ..core.config import settings
 
 class CrewOrchestrator:
@@ -70,7 +81,7 @@ class CrewOrchestrator:
             role="Data Analyst Agent - Senior Market Intelligence Specialist",
             goal="Analyze property listings, sales volume, price-per-sqft trends, and absorption rates across 10 Western India cities.",
             backstory="You are an expert econometrician relying solely on verified database records. You never guess or fabricate numbers.",
-            tools=[self.tools.get_core_kpis, self.tools.get_city_market_data, self.tools.get_property_type_absorption],
+            tools=[get_core_kpis_tool, get_city_market_data_tool, get_property_type_absorption_tool],
             verbose=True,
             allow_delegation=False
         )
@@ -79,7 +90,7 @@ class CrewOrchestrator:
             role="Marketing Agent - Real Estate Growth & Customer Acquisition Strategist",
             goal="Audit 1,800 leads across acquisition channels, calculate CAC, and optimize channel capital allocation.",
             backstory="You are a prop-tech acquisition strategist dissecting conversion velocity across Campaign, Referral, Social Media, Walk-in, Portal, and Website.",
-            tools=[self.tools.get_lead_acquisition_and_funnel, self.tools.get_core_kpis],
+            tools=[get_lead_acquisition_and_funnel_tool, get_core_kpis_tool],
             verbose=True,
             allow_delegation=False
         )
@@ -88,7 +99,7 @@ class CrewOrchestrator:
             role="Finance Agent - Chief Financial Controller & Risk Analyst",
             goal="Audit gross sales volume, commission cash flows, operational expenses across 6 categories, and net profit margins.",
             backstory="You are a Chartered Financial Analyst auditing real estate accounts to safeguard net margin sustainability and eliminate overhead leaks.",
-            tools=[self.tools.get_core_kpis, self.tools.get_expense_breakdown, self.tools.get_monthly_financial_trends],
+            tools=[get_core_kpis_tool, get_expense_breakdown_tool],
             verbose=True,
             allow_delegation=False
         )
@@ -97,7 +108,7 @@ class CrewOrchestrator:
             role="Operations Agent - Head of Broker Network & Field Efficiency",
             goal="Evaluate 55 sales brokers and 1,200 site visits, identify repeat visit demand, and optimize closing workflows.",
             backstory="You are a Lean Six Sigma Master Black Belt optimizing broker enablement and field site inspection workflows.",
-            tools=[self.tools.get_agent_operational_productivity, self.tools.get_site_visit_analytics, self.tools.get_broker_concentration],
+            tools=[get_agent_operational_productivity_tool, get_site_visit_analytics_tool, get_broker_concentration_tool],
             verbose=True,
             allow_delegation=False
         )
@@ -106,7 +117,7 @@ class CrewOrchestrator:
             role="Strategy Agent - Chief Strategy Officer & Executive Architect",
             goal="Synthesize cross-agent intelligence into an actionable 90-day turnaround plan with Human-in-the-Loop approval initiatives.",
             backstory="You are a former senior partner advising real estate executive boards on capital allocation and strategic turnaround plans.",
-            tools=[self.tools.get_core_kpis, self.tools.get_broker_concentration],
+            tools=[get_core_kpis_tool, get_broker_concentration_tool],
             verbose=True,
             allow_delegation=True
         )
@@ -115,7 +126,7 @@ class CrewOrchestrator:
             role="Verification Agent - Chief Quality & Compliance Verification Auditor",
             goal="Cross-examine all agent assertions against raw database calculations, detect any numerical discrepancies, and certify report.",
             backstory="You are a rigorous quantitative auditor dedicated to zero hallucinations and 100% empirical dataset consistency.",
-            tools=[self.tools.get_core_kpis, self.tools.get_expense_breakdown, self.tools.get_lead_acquisition_and_funnel],
+            tools=[get_core_kpis_tool, get_expense_breakdown_tool, get_lead_acquisition_and_funnel_tool],
             verbose=True,
             allow_delegation=False
         )
@@ -126,7 +137,7 @@ class CrewOrchestrator:
                 role="Executive Multi-Agent Manager - Vice President of Decision Intelligence",
                 goal="Coordinate the 6 specialized domain agents, manage workflow delegation, review interim deliverables, and enforce compliance.",
                 backstory="You are the executive orchestrator overseeing the end-to-end analytical workflow across property, marketing, finance, and operations.",
-                tools=[self.tools.get_core_kpis],
+                tools=[get_core_kpis_tool],
                 verbose=True,
                 allow_delegation=True
             )
@@ -245,6 +256,15 @@ class CrewOrchestrator:
         projected_repeat_deals = int(sec_visits * (win_rate / 100.0))
         repeat_deal_comm = round(projected_repeat_deals * avg_deal_comm, 2)
 
+        # Compute unsold warehouse inventory directly from Property table
+        whs = self.db.query(Property).filter(
+            Property.city == top_city.get("city", "Bharuch"),
+            Property.property_type.ilike("%warehouse%"),
+            Property.listing_status.ilike("%available%")
+        ).all()
+        unsold_warehouse_units = len(whs)
+        unsold_warehouse_capital = float(sum(p.asking_price for p in whs)) if whs else 0.0
+
         # Live telemetry parameters queried straight from database tables
         live_telemetry = {
             **kpis,
@@ -281,8 +301,8 @@ class CrewOrchestrator:
             "comm_roi": comm_roi,
             "projected_repeat_deals": projected_repeat_deals,
             "repeat_deal_comm": repeat_deal_comm,
-            "unsold_warehouse_units": 23,
-            "unsold_warehouse_capital": 475483535.03
+            "unsold_warehouse_units": unsold_warehouse_units,
+            "unsold_warehouse_capital": unsold_warehouse_capital
         }
 
         def db_log_callback(agent_name, agent_role, step_name, log_message):
@@ -319,7 +339,9 @@ class CrewOrchestrator:
         }
 
         # Verification pass over all outputs
-        verification_result = VerificationEngine.verify_agent_outputs(kpis, agent_outputs, db_tools=self.tools)
+        verification_result = VerificationEngine.verify_agent_outputs(
+            kpis, agent_outputs, db_tools=self.tools, live_telemetry=live_telemetry
+        )
 
         # Revision Loop-Back: If verification flags discrepancies, send back to Strategy Agent
         if verification_result.get("needs_revision"):
@@ -345,7 +367,9 @@ class CrewOrchestrator:
                 live_telemetry=live_telemetry
             )
             agent_outputs["strategy"] = task_strategy.output
-            verification_result = VerificationEngine.verify_agent_outputs(kpis, agent_outputs, db_tools=self.tools)
+            verification_result = VerificationEngine.verify_agent_outputs(
+                kpis, agent_outputs, db_tools=self.tools, live_telemetry=live_telemetry
+            )
 
         # ---------------------------------------------------------------------
         # 6. Persist Analysis Report in Database
@@ -353,7 +377,7 @@ class CrewOrchestrator:
         if verification_result.get("discrepancies"):
             verdict_text = f"Audit note: {len(verification_result['discrepancies'])} initial discrepancies resolved via automated Strategy revision loop with {verification_result['confidence_score']}% final confidence ({verification_result['status']})."
         else:
-            verdict_text = f"Verification certified 100% empirical dataset consistency with {verification_result['confidence_score']}% confidence ({verification_result['status']})."
+            verdict_text = f"Verification certified empirical dataset consistency with {verification_result['confidence_score']}% mathematical audit score ({verification_result['status']})."
 
         summary = (
             f"Autonomous CrewAI Multi-Agent intelligence executed in {proc.value} mode. "
@@ -391,9 +415,9 @@ class CrewOrchestrator:
                     {
                         "action_key": "ACTION_03",
                         "title": f"Liquidity Acceleration on {top_city['city']} Warehouse Inventory",
-                        "description": f"Introduce a 5% liquidation commission incentive on 23 unsold warehouse units in {top_city['city']} idle >90 days.",
+                        "description": f"Introduce a 5% liquidation commission incentive on {unsold_warehouse_units} unsold warehouse units in {top_city['city']} idle >90 days.",
                         "category": "Pricing / Inventory",
-                        "financial_impact": f"Releases Rs. {live_telemetry['unsold_warehouse_capital']/1e7:.2f} Cr in Locked Inventory Capital (23 Units)",
+                        "financial_impact": f"Releases Rs. {unsold_warehouse_capital/1e7:.2f} Cr in Locked Inventory Capital ({unsold_warehouse_units} Units)",
                         "risk_level": "Medium"
                     }
                 ]
@@ -433,6 +457,7 @@ class CrewOrchestrator:
             "report_id": report.id,
             "status": "Success",
             "execution_mode": proc.value,
+            "engine_used": crew_result.get("engine_used", "Enterprise Grounded Multi-Agent Orchestrator"),
             "duration_seconds": duration,
             "confidence_score": verification_result["confidence_score"],
             "verification_status": verification_result["status"],

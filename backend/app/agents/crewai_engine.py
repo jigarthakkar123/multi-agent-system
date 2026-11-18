@@ -343,7 +343,7 @@ class Crew:
                     chosen_llm = "gpt-4o-mini"
                 elif settings.GEMINI_API_KEY:
                     os.environ["GEMINI_API_KEY"] = settings.GEMINI_API_KEY
-                    chosen_llm = "gemini/gemini-1.5-flash"
+                    chosen_llm = "gemini/gemini-2.5-flash"
 
                 native_agents_map = {}
                 for a in self.agents:

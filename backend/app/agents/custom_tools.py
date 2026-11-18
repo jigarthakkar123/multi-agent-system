@@ -1,6 +1,103 @@
 import json
 from sqlalchemy.orm import Session
+from ..core.database import SessionLocal
 from ..services.kpi_calculator import KPICalculator
+
+# -------------------------------------------------------------------------
+# CrewAI / LangChain @tool Decorator Integration
+# -------------------------------------------------------------------------
+try:
+    from crewai.tools import tool
+except ImportError:
+    try:
+        from langchain.tools import tool
+    except ImportError:
+        def tool(name_or_func=None, **kwargs):
+            if callable(name_or_func):
+                return name_or_func
+            def decorator(func):
+                return func
+            return decorator
+
+@tool("get_core_kpis")
+def get_core_kpis_tool() -> str:
+    """Returns core real estate business KPIs (Revenue, Commission, Expenses, Margin) from database."""
+    db = SessionLocal()
+    try:
+        calc = KPICalculator(db)
+        return json.dumps(calc.get_summary_kpis(), indent=2)
+    finally:
+        db.close()
+
+@tool("get_city_market_data")
+def get_city_market_data_tool() -> str:
+    """Returns property inventory, deals closed, and revenue generated across metropolitan hubs."""
+    db = SessionLocal()
+    try:
+        calc = KPICalculator(db)
+        return json.dumps(calc.get_city_performance(), indent=2)
+    finally:
+        db.close()
+
+@tool("get_lead_acquisition_and_funnel")
+def get_lead_acquisition_and_funnel_tool() -> str:
+    """Returns lead acquisition channel conversion hierarchy, inquiry volumes, and funnel stages."""
+    db = SessionLocal()
+    try:
+        calc = KPICalculator(db)
+        return json.dumps({"funnel_stages": calc.get_lead_funnel(), "lead_sources": calc.get_lead_sources()}, indent=2)
+    finally:
+        db.close()
+
+@tool("get_expense_breakdown")
+def get_expense_breakdown_tool() -> str:
+    """Returns operational expenses grouped by category (Advertising, Maintenance, Legal, etc.)."""
+    db = SessionLocal()
+    try:
+        calc = KPICalculator(db)
+        return json.dumps(calc.get_category_expenses(), indent=2)
+    finally:
+        db.close()
+
+@tool("get_agent_operational_productivity")
+def get_agent_operational_productivity_tool() -> str:
+    """Returns broker productivity metrics (deals closed, commission earned, customer rating)."""
+    db = SessionLocal()
+    try:
+        calc = KPICalculator(db)
+        return json.dumps(calc.get_agent_leaderboard(limit=15), indent=2)
+    finally:
+        db.close()
+
+@tool("get_site_visit_analytics")
+def get_site_visit_analytics_tool() -> str:
+    """Returns physical site visit outcomes, second visit requests, and buyer offer expectations."""
+    db = SessionLocal()
+    try:
+        calc = KPICalculator(db)
+        return json.dumps(calc.get_site_visit_analytics(), indent=2)
+    finally:
+        db.close()
+
+@tool("get_property_type_absorption")
+def get_property_type_absorption_tool() -> str:
+    """Returns inventory units, average pricing, and sold units by property type."""
+    db = SessionLocal()
+    try:
+        calc = KPICalculator(db)
+        return json.dumps(calc.get_property_type_distribution(), indent=2)
+    finally:
+        db.close()
+
+@tool("get_broker_concentration")
+def get_broker_concentration_tool() -> str:
+    """Returns top broker concentration metrics, commission percentages, and top broker IDs."""
+    db = SessionLocal()
+    try:
+        calc = KPICalculator(db)
+        return json.dumps(calc.get_broker_concentration(), indent=2)
+    finally:
+        db.close()
 
 class RealEstateAnalyticsTools:
     """Deterministic analytics tools providing ground-truth data to agents."""

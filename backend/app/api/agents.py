@@ -25,6 +25,48 @@ def execute_multi_agent_system(
     )
     return result
 
+@router.get("/diagnostic")
+def get_engine_diagnostic(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Diagnostic endpoint to inspect live environment, CrewAI installation, and LLM configuration."""
+    import os, sys
+    from ..agents.crewai_engine import HAS_CREWAI_PKG
+    from ..core.config import settings
+
+    diag = {
+        "python_version": sys.version,
+        "has_crewai_pkg": HAS_CREWAI_PKG,
+        "openai_key_set": bool(os.getenv("OPENAI_API_KEY") or settings.OPENAI_API_KEY),
+        "gemini_key_set": bool(os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY),
+        "openai_prefix": (os.getenv("OPENAI_API_KEY") or settings.OPENAI_API_KEY or "")[:7],
+        "gemini_prefix": (os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY or "")[:7],
+    }
+
+    if HAS_CREWAI_PKG:
+        try:
+            from crewai import Agent as TestAgent, Task as TestTask, Crew as TestCrew
+            from ..agents.custom_tools import get_core_kpis_tool
+            diag["tool_type"] = str(type(get_core_kpis_tool))
+            chosen_llm = "gpt-4o-mini" if diag["openai_key_set"] else ("gemini/gemini-2.5-flash" if diag["gemini_key_set"] else None)
+            diag["chosen_llm"] = chosen_llm
+            test_agent = TestAgent(
+                role="Test Analyst",
+                goal="Testing instantiation",
+                backstory="Test backstory",
+                tools=[get_core_kpis_tool],
+                llm=chosen_llm,
+                verbose=False
+            )
+            diag["agent_instantiation"] = "SUCCESS"
+        except Exception as e:
+            diag["agent_instantiation"] = f"ERROR: {type(e).__name__}: {str(e)}"
+    else:
+        diag["agent_instantiation"] = "CREWAI_PKG_NOT_INSTALLED"
+
+    return diag
+
 @router.get("/status", response_model=List[AgentStatusOut])
 def get_agents_status(
     current_user: User = Depends(get_current_user),

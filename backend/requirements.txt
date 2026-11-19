@@ -10,6 +10,6 @@ passlib==1.7.4
 bcrypt==5.0.0
 python-multipart==0.0.34
 httpx==0.28.1
-crewai>=0.28.8; python_version < '3.13'
+crewai>=0.28.8
 psycopg2-binary>=2.9.9; sys_platform == 'linux'
 gunicorn>=21.2.0; sys_platform == 'linux'

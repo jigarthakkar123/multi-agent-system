@@ -56,7 +56,7 @@ export default function App() {
   const [reports, setReports] = useState([]);
   const [profile, setProfile] = useState(null);
   const [datasetSummary, setDatasetSummary] = useState(null);
-  const [engineUsed, setEngineUsed] = useState('Native CrewAI Framework');
+  const [engineUsed, setEngineUsed] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Fetch initial telemetry

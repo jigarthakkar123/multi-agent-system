@@ -20,7 +20,7 @@ export default function AgentsView({
   agentLogs,
   onTriggerAgents,
   runningAgents,
-  engineUsed = 'Native CrewAI Framework'
+  engineUsed = null
 }) {
   const [executionMode, setExecutionMode] = useState('sequential');
   const [selectedAgent, setSelectedAgent] = useState('Data Analyst Agent');
@@ -96,8 +96,12 @@ export default function AgentsView({
             <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-md">
               6 Specialized Agents Active
             </span>
-            <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-md">
-              {engineUsed}
+            <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded-md border ${
+              engineUsed
+                ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
+                : 'bg-slate-800 text-slate-400 border-slate-700'
+            }`}>
+              {engineUsed ? `Engine: ${engineUsed}` : 'Engine: Not Run Yet'}
             </span>
           </div>
           <p className="text-xs text-slate-400">

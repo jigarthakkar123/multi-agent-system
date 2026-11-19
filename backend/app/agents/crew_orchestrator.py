@@ -46,22 +46,8 @@ class CrewOrchestrator:
         self.db.add(log)
         self.db.commit()
 
-    def run_multi_agent_pipeline(
-        self,
-        execution_mode: str = "sequential",
-        focus_city: str = None,
-        api_key: str = None,
-        llm_provider: str = None
-    ) -> dict:
+    def run_multi_agent_pipeline(self, execution_mode: str = "sequential", focus_city: str = None) -> dict:
         """Executes the full 6-agent CrewAI real estate decision intelligence workflow."""
-        if api_key:
-            import os
-            if llm_provider and llm_provider.lower() == "openai":
-                settings.OPENAI_API_KEY = api_key
-                os.environ["OPENAI_API_KEY"] = api_key
-            else:
-                settings.GEMINI_API_KEY = api_key
-                os.environ["GEMINI_API_KEY"] = api_key
         start_time = time.time()
         run_id = f"RUN-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:6]}"
 
@@ -316,7 +302,8 @@ class CrewOrchestrator:
             "projected_repeat_deals": projected_repeat_deals,
             "repeat_deal_comm": repeat_deal_comm,
             "unsold_warehouse_units": unsold_warehouse_units,
-            "unsold_warehouse_capital": unsold_warehouse_capital
+            "unsold_warehouse_capital": unsold_warehouse_capital,
+            "liquidation_incentive_pct": 5.0
         }
 
         def db_log_callback(agent_name, agent_role, step_name, log_message):
@@ -435,6 +422,10 @@ class CrewOrchestrator:
                         "risk_level": "Medium"
                     }
                 ]
+            },
+            verification_details_json={
+                **verification_result,
+                "engine_used": crew_result.get("engine_used", "Enterprise Grounded Multi-Agent Orchestrator")
             },
             verification_status=verification_result["status"],
             confidence_score=verification_result["confidence_score"]

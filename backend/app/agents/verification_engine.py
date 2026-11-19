@@ -83,8 +83,7 @@ class VerificationEngine:
             round(actual_conv, 2),
             round(actual_absorption, 2),
             round(actual_win_rate, 2),
-            round(comm_yield, 2),
-            5.0, 10.0, 15.0, 20.0, 25.0,        # Standard strategic incentive tiers
+            round(comm_yield, 2)
         }
 
         valid_currencies = {
@@ -101,7 +100,7 @@ class VerificationEngine:
                 val = live_telemetry.get(field)
                 if val:
                     valid_currencies.add(round(float(val), 2))
-            for pct_field in ["top_channel_rate", "second_channel_rate", "top_expense_pct", "second_expense_pct", "top_10_broker_pct", "comm_roi", "confidence_score"]:
+            for pct_field in ["top_channel_rate", "second_channel_rate", "top_expense_pct", "second_expense_pct", "top_10_broker_pct", "comm_roi", "liquidation_incentive_pct"]:
                 val = live_telemetry.get(pct_field)
                 if val:
                     valid_percentages.add(round(float(val), 2))

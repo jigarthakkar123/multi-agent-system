@@ -207,8 +207,8 @@ class Agent:
         incremental_comm = float(t.get("incremental_comm", 5179000.0))
         comm_roi = float(t.get("comm_roi", 1.48))
         projected_repeat_deals = int(t.get("projected_repeat_deals", 143))
-        unsold_wh_units = int(t.get("unsold_warehouse_units", 10))
-        unsold_wh_cap = float(t.get("unsold_warehouse_capital", 180630348.52))
+        unsold_wh_units = int(t.get("unsold_warehouse_units", 0))
+        unsold_wh_cap = float(t.get("unsold_warehouse_capital", 0.0))
         conf_score = float(t.get("confidence_score", 99.5))
         audit_status = str(t.get("verification_status", "Verified & Approved"))
 
@@ -261,14 +261,19 @@ class Agent:
             )
 
         elif "strategy" in role_lower:
+            wh_line = (
+                f"3. Stale Inventory Liquidity Acceleration: Introduce a 5% liquidation acceleration incentive on {unsold_wh_units} available warehouse units in {top_city_name}, "
+                f"releasing up to Rs. {unsold_wh_cap/1e7:.2f} Cr in locked capital.\n"
+                if unsold_wh_units > 0
+                else f"3. Commercial Inventory Optimization: Monitor warehouse absorption and occupancy velocity across metropolitan industrial zones.\n"
+            )
             return (
                 f"CHIEF STRATEGY OFFICER - 90-DAY BUSINESS IMPROVEMENT PLAN:\n"
                 f"1. Marketing Reallocation Initiative: Shift Rs. 35,00,000 away from underperforming channels into {top_ch_name} ({top_ch_rate:.2f}%) "
                 f"and {sec_ch_name} ({sec_ch_rate:.2f}%), capturing {incremental_deals} incremental closed deals and Rs. {incremental_comm/1e5:.2f} Lakhs in commission ({comm_roi:.2f}x Commission ROI).\n"
                 f"2. Operational Scheduling Acceleration: Deploy automated instant scheduling to capture the {sec_visit_demand} buyers requesting second visits, "
                 f"targeting up to {projected_repeat_deals} incremental closed deals at historical {win_rate:.2f}% closing efficiency.\n"
-                f"3. Stale Inventory Liquidity Acceleration: Introduce a 5% liquidation acceleration incentive on {unsold_wh_units} available warehouse units in {top_city_name}, "
-                f"releasing up to Rs. {unsold_wh_cap/1e7:.2f} Cr in locked capital.\n"
+                f"{wh_line}"
                 f"All three initiatives staged in the Human Approval Queue for executive managerial sign-off."
             )
 

@@ -21,9 +21,7 @@ def execute_multi_agent_system(
     orchestrator = CrewOrchestrator(db)
     result = orchestrator.run_multi_agent_pipeline(
         execution_mode=request.execution_mode,
-        focus_city=request.focus_city,
-        api_key=request.api_key,
-        llm_provider=request.llm_provider
+        focus_city=request.focus_city
     )
     return result
 
@@ -94,7 +92,8 @@ def get_previous_runs(
             "created_at": r.created_at,
             "verification_status": r.verification_status,
             "confidence_score": r.confidence_score,
-            "execution_time_seconds": r.execution_time_seconds
+            "execution_time_seconds": r.execution_time_seconds,
+            "engine_used": (r.verification_details_json or {}).get("engine_used")
         }
         for r in reports
     ]

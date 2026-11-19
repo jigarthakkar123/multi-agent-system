@@ -303,7 +303,9 @@ class CrewOrchestrator:
             "repeat_deal_comm": repeat_deal_comm,
             "unsold_warehouse_units": unsold_warehouse_units,
             "unsold_warehouse_capital": unsold_warehouse_capital,
-            "liquidation_incentive_pct": 5.0
+            "liquidation_incentive_pct": 5.0,
+            "reallocation_budget": 3500000.0,
+            "top_10_broker_pct": float(broker_conc.get("top10_commission_pct", 31.16))
         }
 
         def db_log_callback(agent_name, agent_role, step_name, log_message):

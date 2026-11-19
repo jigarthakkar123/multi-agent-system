@@ -162,6 +162,10 @@ class VerificationEngine:
                 if tot_v > 0:
                     valid_percentages.add(round((sec_v / tot_v) * 100, 2))
                     valid_percentages.add(round((exp_off / tot_v) * 100, 2))
+                for pct in (visit_data.get("outcomes_pct") or {}).values():
+                    valid_percentages.add(round(float(pct), 2))
+                for pct in (visit_data.get("feedbacks_pct") or {}).values():
+                    valid_percentages.add(round(float(pct), 2))
             except Exception:
                 pass
 
@@ -177,9 +181,10 @@ class VerificationEngine:
 
             try:
                 conc = json.loads(db_tools.get_broker_concentration())
-                conc_pct = float(conc.get("top_10_commission_pct", 0.0))
-                if conc_pct > 0:
-                    valid_percentages.add(round(conc_pct, 2))
+                for k in ["top10_commission_pct", "top5_commission_pct", "top10_deals_pct", "top5_deals_pct"]:
+                    conc_val = conc.get(k)
+                    if conc_val is not None and float(conc_val) > 0:
+                        valid_percentages.add(round(float(conc_val), 2))
             except Exception:
                 pass
 

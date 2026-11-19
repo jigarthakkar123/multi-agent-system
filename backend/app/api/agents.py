@@ -32,13 +32,14 @@ def get_engine_diagnostic(
 ):
     """Admin-only diagnostic endpoint to inspect live environment, CrewAI installation, and LLM configuration."""
     import os, sys
-    from ..agents.crewai_engine import HAS_CREWAI_PKG, CREWAI_IMPORT_ERROR
+    from ..agents.crewai_engine import HAS_CREWAI_PKG, CREWAI_IMPORT_ERROR, LAST_CREWAI_ERROR
     from ..core.config import settings
 
     diag = {
         "python_version": sys.version,
         "has_crewai_pkg": HAS_CREWAI_PKG,
         "crewai_import_error": CREWAI_IMPORT_ERROR,
+        "last_crewai_error": LAST_CREWAI_ERROR,
         "openai_key_configured": bool(os.getenv("OPENAI_API_KEY") or settings.OPENAI_API_KEY),
         "gemini_key_configured": bool(os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY),
     }
@@ -83,9 +84,22 @@ def get_engine_diagnostic(
         try:
             import httpx
             g_key = os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
+            # List available models for this key
+            try:
+                list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={g_key}"
+                l_res = httpx.get(list_url, timeout=5.0)
+                if l_res.status_code == 200:
+                    diag["gemini_models_available"] = [m.get("name") for m in l_res.json().get("models", [])[:8]]
+                else:
+                    diag["gemini_list_models_status"] = f"HTTP {l_res.status_code}: {l_res.text[:200]}"
+            except Exception as le:
+                diag["gemini_list_models_status"] = f"ERROR: {le}"
+
             g_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={g_key}"
             g_res = httpx.post(g_url, json={"contents": [{"parts": [{"text": "Say OK"}]}]}, timeout=5.0)
             diag["gemini_direct_status"] = f"HTTP {g_res.status_code}"
+            if g_res.status_code != 200:
+                diag["gemini_error_body"] = g_res.text[:200]
         except Exception as e:
             diag["gemini_direct_status"] = f"ERROR: {e}"
 

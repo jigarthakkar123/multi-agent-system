@@ -24,9 +24,11 @@ try:
     from crewai.tools import tool
     HAS_CREWAI_PKG = True
     CREWAI_IMPORT_ERROR = None
+    LAST_CREWAI_ERROR = None
 except (ImportError, Exception) as e:
     HAS_CREWAI_PKG = False
     CREWAI_IMPORT_ERROR = str(e)
+    LAST_CREWAI_ERROR = None
     def tool(name_or_func=None, **kwargs):
         """Fallback tool decorator when crewai is not installed."""
         if callable(name_or_func):
@@ -442,7 +444,10 @@ class Crew:
                         }
                 except Exception as e:
                     import traceback
-                    logger.error(f"Native CrewAI attempt with {chosen_llm} failed: {e}\n{traceback.format_exc()}")
+                    tb = traceback.format_exc()
+                    global LAST_CREWAI_ERROR
+                    LAST_CREWAI_ERROR = f"{chosen_llm}: {type(e).__name__}: {str(e)} | Details: {tb[-400:]}"
+                    logger.error(f"Native CrewAI attempt with {chosen_llm} failed: {e}\n{tb}")
                     continue
 
         # ---------------------------------------------------------------------

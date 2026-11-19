@@ -1,5 +1,6 @@
+from __future__ import annotations
 import re
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
 from datetime import datetime
 
 class VerificationEngine:

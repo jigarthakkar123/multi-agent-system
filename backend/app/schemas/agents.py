@@ -7,6 +7,8 @@ class AgentRunRequest(BaseModel):
     focus_city: Optional[str] = None
     focus_property_type: Optional[str] = None
     custom_instructions: Optional[str] = None
+    api_key: Optional[str] = None
+    llm_provider: Optional[str] = None
 
 class AgentStepLogOut(BaseModel):
     id: int

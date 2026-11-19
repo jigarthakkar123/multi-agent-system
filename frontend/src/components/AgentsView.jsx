@@ -19,7 +19,8 @@ export default function AgentsView({
   agentsStatus,
   agentLogs,
   onTriggerAgents,
-  runningAgents
+  runningAgents,
+  engineUsed = 'Native CrewAI Framework'
 }) {
   const [executionMode, setExecutionMode] = useState('sequential');
   const [selectedAgent, setSelectedAgent] = useState('Data Analyst Agent');
@@ -79,7 +80,7 @@ export default function AgentsView({
       responsibilities: [
         'Cross-verify numerical metrics against raw database records',
         'Detect LLM hallucinations and flag contradictory claims',
-        'Issue audited Confidence Score (99.0%) and zero-hallucination certificate'
+        'Calculate empirical Confidence Score and generate verification statement'
       ]
     }
   };
@@ -89,11 +90,14 @@ export default function AgentsView({
       {/* Header & Controls */}
       <div className="glass-card p-5 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <Cpu className="w-5 h-5 text-indigo-400" />
             <h2 className="text-base font-bold text-white">CrewAI Multi-Agent Autonomous Fleet</h2>
             <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-md">
               6 Specialized Agents Active
+            </span>
+            <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-md">
+              {engineUsed}
             </span>
           </div>
           <p className="text-xs text-slate-400">

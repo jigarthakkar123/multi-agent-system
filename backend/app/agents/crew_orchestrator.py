@@ -46,8 +46,22 @@ class CrewOrchestrator:
         self.db.add(log)
         self.db.commit()
 
-    def run_multi_agent_pipeline(self, execution_mode: str = "sequential", focus_city: str = None) -> dict:
+    def run_multi_agent_pipeline(
+        self,
+        execution_mode: str = "sequential",
+        focus_city: str = None,
+        api_key: str = None,
+        llm_provider: str = None
+    ) -> dict:
         """Executes the full 6-agent CrewAI real estate decision intelligence workflow."""
+        if api_key:
+            import os
+            if llm_provider and llm_provider.lower() == "openai":
+                settings.OPENAI_API_KEY = api_key
+                os.environ["OPENAI_API_KEY"] = api_key
+            else:
+                settings.GEMINI_API_KEY = api_key
+                os.environ["GEMINI_API_KEY"] = api_key
         start_time = time.time()
         run_id = f"RUN-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:6]}"
 
@@ -210,9 +224,9 @@ class CrewOrchestrator:
                 f"Rigorously cross-examine all findings against database metrics. "
                 f"Verify: Revenue = ₹{kpis['total_revenue']:,.2f}, Commission = ₹{kpis['total_commission']:,.2f}, "
                 f"Expenses = ₹{kpis['total_expenses']:,.2f}, Margin = {kpis['profit_margin_pct']}%, Lead Conversion = {kpis['conversion_rate_pct']}%. "
-                f"Check that {top_src['source']} is recognized as #1 channel and {top_exp['category']} as #1 expense. Issue audit certificate."
+                f"Check that {top_src['source']} is recognized as #1 channel and {top_exp['category']} as #1 expense. Issue empirical audit verification statement."
             ),
-            expected_output="Zero-hallucination verification certificate with empirical confidence score.",
+            expected_output="Empirical verification statement with independently calculated confidence score.",
             agent=agent_verification,
             context=[task_strategy, task_finance, task_data]
         )
@@ -415,7 +429,7 @@ class CrewOrchestrator:
                     {
                         "action_key": "ACTION_03",
                         "title": f"Liquidity Acceleration on {top_city['city']} Warehouse Inventory",
-                        "description": f"Introduce a 5% liquidation commission incentive on {unsold_warehouse_units} unsold warehouse units in {top_city['city']} idle >90 days.",
+                        "description": f"Introduce a 5% liquidation commission incentive on {unsold_warehouse_units} available warehouse units in {top_city['city']} currently listed in inventory.",
                         "category": "Pricing / Inventory",
                         "financial_impact": f"Releases Rs. {unsold_warehouse_capital/1e7:.2f} Cr in Locked Inventory Capital ({unsold_warehouse_units} Units)",
                         "risk_level": "Medium"

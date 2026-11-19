@@ -21,7 +21,9 @@ def execute_multi_agent_system(
     orchestrator = CrewOrchestrator(db)
     result = orchestrator.run_multi_agent_pipeline(
         execution_mode=request.execution_mode,
-        focus_city=request.focus_city
+        focus_city=request.focus_city,
+        api_key=request.api_key,
+        llm_provider=request.llm_provider
     )
     return result
 
@@ -37,7 +39,7 @@ def get_agents_status(
         {"name": "Finance Agent", "role": "Chief Financial Controller & Risk Analyst", "task": "Auditing Rs. 11.70 Cr commissions, Rs. 2.98 Cr expenses, and 74.58% net margin"},
         {"name": "Operations Agent", "role": "Head of Operations & Broker Network Efficiency", "task": "Evaluating 55 brokers and 1,200 site visits, optimizing second-visit conversion workflows"},
         {"name": "Strategy Agent", "role": "Chief Strategy Officer", "task": "Formulating 90-day turnaround plan and staging consequential Human Approval initiatives"},
-        {"name": "Verification Agent", "role": "Chief Quality & Compliance Verification Auditor", "task": "Cross-verifying all numerical claims against ground truth; issuing zero-hallucination certificate"}
+        {"name": "Verification Agent", "role": "Chief Quality & Compliance Verification Auditor", "task": "Cross-verifying all numerical claims against ground truth; calculating empirical confidence score and verification statement"}
     ]
     
     results = []

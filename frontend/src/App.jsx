@@ -56,6 +56,7 @@ export default function App() {
   const [reports, setReports] = useState([]);
   const [profile, setProfile] = useState(null);
   const [datasetSummary, setDatasetSummary] = useState(null);
+  const [engineUsed, setEngineUsed] = useState('Native CrewAI Framework');
   const [loading, setLoading] = useState(true);
 
   // Fetch initial telemetry
@@ -147,7 +148,10 @@ export default function App() {
   const handleTriggerAgents = async (mode = 'sequential') => {
     setRunningAgents(true);
     try {
-      await executeAgents({ execution_mode: mode });
+      const res = await executeAgents({ execution_mode: mode });
+      if (res.data?.engine_used) {
+        setEngineUsed(res.data.engine_used);
+      }
       await fetchAllData();
       setActiveTab('agents');
     } catch (err) {
@@ -227,6 +231,7 @@ export default function App() {
               agentLogs={agentLogs}
               onTriggerAgents={handleTriggerAgents}
               runningAgents={runningAgents}
+              engineUsed={engineUsed}
             />
           )}
 

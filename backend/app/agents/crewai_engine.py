@@ -114,13 +114,14 @@ class Agent:
         # 1. Try Gemini with fast timeout
         if settings.GEMINI_API_KEY:
             try:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={settings.GEMINI_API_KEY}"
+                url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
+                headers = {"x-goog-api-key": settings.GEMINI_API_KEY}
                 payload = {
                     "contents": [{
                         "parts": [{"text": f"{self.system_prompt}\n\n{user_prompt}"}]
                     }]
                 }
-                resp = httpx.post(url, json=payload, timeout=3.5)
+                resp = httpx.post(url, headers=headers, json=payload, timeout=3.5)
                 if resp.status_code == 200:
                     data = resp.json()
                     candidates = data.get("candidates", [])
@@ -355,10 +356,11 @@ class Crew:
             os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
             llm_candidates = []
-            # Try Gemini 3.8 Flash and Gemini Flash Latest (verified active in Google AI Studio)
+            # Try Gemini models (separate quota pools per model in Google AI Studio)
             if settings.GEMINI_API_KEY:
                 llm_candidates.append(("gemini/gemini-3.8-flash", "GEMINI_API_KEY", settings.GEMINI_API_KEY))
-                llm_candidates.append(("gemini/gemini-flash-latest", "GEMINI_API_KEY", settings.GEMINI_API_KEY))
+                llm_candidates.append(("gemini/gemini-flash-lite-latest", "GEMINI_API_KEY", settings.GEMINI_API_KEY))
+                llm_candidates.append(("gemini/gemini-2.5-pro", "GEMINI_API_KEY", settings.GEMINI_API_KEY))
             if settings.OPENAI_API_KEY:
                 llm_candidates.append(("gpt-4o-mini", "OPENAI_API_KEY", settings.OPENAI_API_KEY))
 
@@ -446,7 +448,13 @@ class Crew:
                     import traceback
                     tb = traceback.format_exc()
                     global LAST_CREWAI_ERRORS
-                    LAST_CREWAI_ERRORS[chosen_llm] = f"{type(e).__name__}: {str(e)} | Details: {tb[-300:]}"
+                    err_text = f"{type(e).__name__}: {str(e)} | Details: {tb[-300:]}"
+                    # Redact any sensitive API keys from telemetry errors
+                    if settings.GEMINI_API_KEY:
+                        err_text = err_text.replace(settings.GEMINI_API_KEY, "[REDACTED_GEMINI_KEY]")
+                    if settings.OPENAI_API_KEY:
+                        err_text = err_text.replace(settings.OPENAI_API_KEY, "[REDACTED_OPENAI_KEY]")
+                    LAST_CREWAI_ERRORS[chosen_llm] = err_text
                     logger.error(f"Native CrewAI attempt with {chosen_llm} failed: {e}\n{tb}")
                     continue
 

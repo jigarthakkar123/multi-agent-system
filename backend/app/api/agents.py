@@ -93,10 +93,11 @@ def get_engine_diagnostic(
         try:
             import httpx
             g_key = os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
+            g_headers = {"x-goog-api-key": g_key}
             # List available models for this key
             try:
-                list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={g_key}"
-                l_res = httpx.get(list_url, timeout=10.0)
+                list_url = "https://generativelanguage.googleapis.com/v1beta/models"
+                l_res = httpx.get(list_url, headers=g_headers, timeout=10.0)
                 if l_res.status_code == 200:
                     diag["gemini_models_available"] = [m.get("name") for m in l_res.json().get("models", [])[:8]]
                 else:
@@ -104,8 +105,8 @@ def get_engine_diagnostic(
             except Exception as le:
                 diag["gemini_list_models_status"] = f"ERROR: {le}"
 
-            g_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={g_key}"
-            g_res = httpx.post(g_url, json={"contents": [{"parts": [{"text": "Say OK"}]}]}, timeout=15.0)
+            g_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
+            g_res = httpx.post(g_url, headers=g_headers, json={"contents": [{"parts": [{"text": "Say OK"}]}]}, timeout=15.0)
             diag["gemini_direct_status"] = f"HTTP {g_res.status_code}"
             if g_res.status_code != 200:
                 diag["gemini_error_body"] = g_res.text[:200]
@@ -126,7 +127,21 @@ def get_engine_diagnostic(
         except Exception as e:
             diag["openai_direct_status"] = f"ERROR: {e}"
 
-    return diag
+    # Rigorous credential sanitization to prevent key leaks in headers, logs, or error strings
+    def sanitize(val):
+        if isinstance(val, str):
+            if settings.GEMINI_API_KEY:
+                val = val.replace(settings.GEMINI_API_KEY, "[REDACTED_GEMINI_KEY]")
+            if settings.OPENAI_API_KEY:
+                val = val.replace(settings.OPENAI_API_KEY, "[REDACTED_OPENAI_KEY]")
+            return val
+        elif isinstance(val, dict):
+            return {k: sanitize(v) for k, v in val.items()}
+        elif isinstance(val, list):
+            return [sanitize(v) for v in val]
+        return val
+
+    return sanitize(diag)
 
 @router.get("/status", response_model=List[AgentStatusOut])
 def get_agents_status(

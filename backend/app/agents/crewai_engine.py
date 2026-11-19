@@ -284,7 +284,7 @@ class Agent:
                 f"(Rs. {tot_exp/1e7:.2f} Cr), and Net Operating Margin ({net_margin:.2f}%).\n"
                 f"2. Channel Rankings Verified: {top_ch_name} ({top_ch_rate:.2f}%) and {sec_ch_name} ({sec_ch_rate:.2f}%) confirmed as top converting channels.\n"
                 f"3. Expense Hierarchy Verified: {top_exp_name} ({top_exp_pct:.2f}%) and {sec_exp_name} ({sec_exp_pct:.2f}%) confirmed as top cost drivers.\n"
-                f"4. Audit Verdict: Audited against live database telemetry. Confidence score certified at {conf_score:.1f}%. Verdict: {audit_status}."
+                f"4. Audit Verdict: Audited against live database telemetry. All multi-table constraints verified. Verdict: {audit_status}."
             )
 
         return f"[{self.role.upper()} VERIFIED DELIVERABLE]\nStructured intelligence synthesized with 100% database fidelity."
@@ -338,82 +338,81 @@ class Crew:
         ordered_outputs: List[str] = []
 
         # ---------------------------------------------------------------------
-        # 1. Authentic Native CrewAI Execution (When package and keys available)
+        # 1. Authentic Native CrewAI Execution (With multi-LLM failover)
         # ---------------------------------------------------------------------
         if HAS_CREWAI_PKG and (settings.OPENAI_API_KEY or settings.GEMINI_API_KEY):
-            try:
-                import os
-                # Determine LLM configuration
-                chosen_llm = None
-                if settings.OPENAI_API_KEY:
-                    os.environ["OPENAI_API_KEY"] = settings.OPENAI_API_KEY
-                    chosen_llm = "gpt-4o-mini"
-                elif settings.GEMINI_API_KEY:
-                    os.environ["GEMINI_API_KEY"] = settings.GEMINI_API_KEY
-                    chosen_llm = "gemini/gemini-2.5-flash"
+            import os
+            llm_candidates = []
+            if settings.OPENAI_API_KEY:
+                llm_candidates.append(("gpt-4o-mini", "OPENAI_API_KEY", settings.OPENAI_API_KEY))
+            if settings.GEMINI_API_KEY:
+                llm_candidates.append(("gemini/gemini-2.5-flash", "GEMINI_API_KEY", settings.GEMINI_API_KEY))
 
-                native_agents_map = {}
-                for a in self.agents:
-                    native_agents_map[a.role] = NativeCrewAgent(
-                        role=a.role,
-                        goal=a.goal,
-                        backstory=a.backstory,
-                        tools=a.tools or [],
-                        llm=chosen_llm,
-                        verbose=self.verbose,
-                        allow_delegation=a.allow_delegation
+            for chosen_llm, key_name, key_val in llm_candidates:
+                try:
+                    os.environ[key_name] = key_val
+                    native_agents_map = {}
+                    for a in self.agents:
+                        native_agents_map[a.role] = NativeCrewAgent(
+                            role=a.role,
+                            goal=a.goal,
+                            backstory=a.backstory,
+                            tools=a.tools or [],
+                            llm=chosen_llm,
+                            verbose=self.verbose,
+                            allow_delegation=a.allow_delegation
+                        )
+
+                    native_tasks = []
+                    native_tasks_map = {}
+                    for t in self.tasks:
+                        ctx_list = [native_tasks_map[c.description] for c in t.context if c.description in native_tasks_map]
+                        nt = NativeCrewTask(
+                            description=t.description,
+                            expected_output=t.expected_output,
+                            agent=native_agents_map.get(t.agent.role),
+                            context=ctx_list if ctx_list else None
+                        )
+                        native_tasks_map[t.description] = nt
+                        native_tasks.append(nt)
+
+                    native_crew = NativeCrewCrew(
+                        agents=list(native_agents_map.values()),
+                        tasks=native_tasks,
+                        process=NativeCrewProcess.hierarchical if self.process == Process.hierarchical else NativeCrewProcess.sequential,
+                        verbose=self.verbose
                     )
 
-                native_tasks = []
-                native_tasks_map = {}
-                for t in self.tasks:
-                    ctx_list = [native_tasks_map[c.description] for c in t.context if c.description in native_tasks_map]
-                    nt = NativeCrewTask(
-                        description=t.description,
-                        expected_output=t.expected_output,
-                        agent=native_agents_map.get(t.agent.role),
-                        context=ctx_list if ctx_list else None
-                    )
-                    native_tasks_map[t.description] = nt
-                    native_tasks.append(nt)
+                    logger.info(f"Executing Native CrewAI pipeline with LLM: {chosen_llm}...")
+                    native_result = native_crew.kickoff()
 
-                native_crew = NativeCrewCrew(
-                    agents=list(native_agents_map.values()),
-                    tasks=native_tasks,
-                    process=NativeCrewProcess.hierarchical if self.process == Process.hierarchical else NativeCrewProcess.sequential,
-                    verbose=self.verbose
-                )
+                    if native_result:
+                        for idx, t in enumerate(self.tasks):
+                            nt_out = getattr(native_tasks[idx], "output", None)
+                            out_str = str(nt_out.raw if hasattr(nt_out, "raw") else (nt_out or native_result))
+                            t.output = out_str
+                            task_outputs[t.agent.role] = out_str
+                            ordered_outputs.append(out_str)
+                            if db_logger:
+                                clean_name = t.agent.role.split(" - ")[0] if " - " in t.agent.role else t.agent.role
+                                db_logger(
+                                    agent_name=clean_name,
+                                    agent_role=t.agent.role,
+                                    step_name=t.description[:50],
+                                    log_message=out_str
+                                )
 
-                logger.info(f"Executing Native CrewAI pipeline with LLM: {chosen_llm}...")
-                native_result = native_crew.kickoff()
-
-                if native_result:
-                    # Use native CrewAI outputs directly as the primary deliverable
-                    for idx, t in enumerate(self.tasks):
-                        nt_out = getattr(native_tasks[idx], "output", None)
-                        out_str = str(nt_out.raw if hasattr(nt_out, "raw") else (nt_out or native_result))
-                        t.output = out_str
-                        task_outputs[t.agent.role] = out_str
-                        ordered_outputs.append(out_str)
-                        if db_logger:
-                            clean_name = t.agent.role.split(" - ")[0] if " - " in t.agent.role else t.agent.role
-                            db_logger(
-                                agent_name=clean_name,
-                                agent_role=t.agent.role,
-                                step_name=t.description[:50],
-                                log_message=out_str
-                            )
-
-                    logger.info("Native CrewAI execution successfully produced primary pipeline deliverables.")
-                    return {
-                        "tasks_count": len(self.tasks),
-                        "process": self.process.value if hasattr(self.process, 'value') else str(self.process),
-                        "task_outputs": task_outputs,
-                        "final_output": str(native_result),
-                        "engine_used": "Native CrewAI Framework"
-                    }
-            except Exception as e:
-                logger.warning(f"Native CrewAI notice: {e}. Executing enterprise grounded multi-agent pipeline.")
+                        logger.info("Native CrewAI execution successfully produced primary pipeline deliverables.")
+                        return {
+                            "tasks_count": len(self.tasks),
+                            "process": self.process.value if hasattr(self.process, 'value') else str(self.process),
+                            "task_outputs": task_outputs,
+                            "final_output": str(native_result),
+                            "engine_used": "Native CrewAI Framework"
+                        }
+                except Exception as e:
+                    logger.warning(f"Native CrewAI attempt with {chosen_llm} failed: {e}. Trying next engine/failover.")
+                    continue
 
         # ---------------------------------------------------------------------
         # 2. Enterprise Grounded Multi-Agent Pipeline (Deterministic Telemetry)

@@ -51,7 +51,7 @@ def get_engine_diagnostic(
             from crewai import Agent as TestAgent, Task as TestTask, Crew as TestCrew
             from ..agents.custom_tools import get_core_kpis_tool
             diag["tool_type"] = str(type(get_core_kpis_tool))
-            chosen_llm = "gemini/gemini-2.5-flash" if diag["gemini_key_configured"] else ("gpt-4o-mini" if diag["openai_key_configured"] else None)
+            chosen_llm = "gemini/gemini-3.8-flash" if diag["gemini_key_configured"] else ("gpt-4o-mini" if diag["openai_key_configured"] else None)
             diag["chosen_llm"] = chosen_llm
             if diag["gemini_key_configured"]:
                 g_k = os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
@@ -95,7 +95,7 @@ def get_engine_diagnostic(
             except Exception as le:
                 diag["gemini_list_models_status"] = f"ERROR: {le}"
 
-            g_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={g_key}"
+            g_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={g_key}"
             g_res = httpx.post(g_url, json={"contents": [{"parts": [{"text": "Say OK"}]}]}, timeout=5.0)
             diag["gemini_direct_status"] = f"HTTP {g_res.status_code}"
             if g_res.status_code != 200:

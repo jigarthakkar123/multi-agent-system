@@ -52,6 +52,23 @@ def on_startup():
     print("Initializing Database tables...")
     Base.metadata.create_all(bind=engine)
     
+    # Automatic backward-compatible database schema migration check
+    try:
+        from sqlalchemy import text, inspect
+        inspector = inspect(engine)
+        if "analysis_reports" in inspector.get_table_names():
+            columns = [c["name"] for c in inspector.get_columns("analysis_reports")]
+            if "verification_details_json" not in columns:
+                print("Applying schema migration: Adding verification_details_json column to analysis_reports...")
+                with engine.connect() as conn:
+                    if "postgres" in str(engine.url).lower():
+                        conn.execute(text("ALTER TABLE analysis_reports ADD COLUMN IF NOT EXISTS verification_details_json JSON;"))
+                    else:
+                        conn.execute(text("ALTER TABLE analysis_reports ADD COLUMN verification_details_json JSON;"))
+                    conn.commit()
+    except Exception as e:
+        print(f"Schema migration notice: {e}")
+    
     db = SessionLocal()
     try:
         # 1. Seed Default Admin & Manager Users

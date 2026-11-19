@@ -114,7 +114,7 @@ class Agent:
         # 1. Try Gemini with fast timeout
         if settings.GEMINI_API_KEY:
             try:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={settings.GEMINI_API_KEY}"
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={settings.GEMINI_API_KEY}"
                 payload = {
                     "contents": [{
                         "parts": [{"text": f"{self.system_prompt}\n\n{user_prompt}"}]
@@ -355,10 +355,10 @@ class Crew:
             os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
             llm_candidates = []
-            # Try Gemini first (Google AI Studio key with generous rate limits), then Gemini 2.0, then OpenAI
+            # Try Gemini 2.5 Flash and Gemini Flash Latest (verified active in Google AI Studio)
             if settings.GEMINI_API_KEY:
-                llm_candidates.append(("gemini/gemini-1.5-flash", "GEMINI_API_KEY", settings.GEMINI_API_KEY))
-                llm_candidates.append(("gemini/gemini-2.0-flash", "GEMINI_API_KEY", settings.GEMINI_API_KEY))
+                llm_candidates.append(("gemini/gemini-2.5-flash", "GEMINI_API_KEY", settings.GEMINI_API_KEY))
+                llm_candidates.append(("gemini/gemini-flash-latest", "GEMINI_API_KEY", settings.GEMINI_API_KEY))
             if settings.OPENAI_API_KEY:
                 llm_candidates.append(("gpt-4o-mini", "OPENAI_API_KEY", settings.OPENAI_API_KEY))
 

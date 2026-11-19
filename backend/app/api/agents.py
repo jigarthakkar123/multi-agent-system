@@ -50,14 +50,26 @@ def get_engine_diagnostic(
             from crewai import Agent as TestAgent, Task as TestTask, Crew as TestCrew
             from ..agents.custom_tools import get_core_kpis_tool
             diag["tool_type"] = str(type(get_core_kpis_tool))
-            chosen_llm = "gemini/gemini-2.5-flash" if diag["gemini_key_configured"] else ("gpt-4o-mini" if diag["openai_key_configured"] else None)
+            chosen_llm = "gemini/gemini-1.5-flash" if diag["gemini_key_configured"] else ("gpt-4o-mini" if diag["openai_key_configured"] else None)
             diag["chosen_llm"] = chosen_llm
+            if diag["gemini_key_configured"]:
+                g_k = os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
+                os.environ["GOOGLE_API_KEY"] = g_k
+                os.environ["GEMINI_API_KEY"] = g_k
+
+            test_llm = chosen_llm
+            try:
+                from crewai import LLM as CrewLLM
+                test_llm = CrewLLM(model=chosen_llm, api_key=os.getenv("GEMINI_API_KEY") or os.getenv("OPENAI_API_KEY"))
+            except Exception:
+                test_llm = chosen_llm
+
             test_agent = TestAgent(
                 role="Test Analyst",
                 goal="Testing instantiation",
                 backstory="Test backstory",
                 tools=[get_core_kpis_tool],
-                llm=chosen_llm,
+                llm=test_llm,
                 verbose=False
             )
             diag["agent_instantiation"] = "SUCCESS"
@@ -71,7 +83,7 @@ def get_engine_diagnostic(
         try:
             import httpx
             g_key = os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
-            g_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={g_key}"
+            g_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={g_key}"
             g_res = httpx.post(g_url, json={"contents": [{"parts": [{"text": "Say OK"}]}]}, timeout=5.0)
             diag["gemini_direct_status"] = f"HTTP {g_res.status_code}"
         except Exception as e:

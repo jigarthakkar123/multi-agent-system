@@ -112,7 +112,7 @@ class Agent:
         # 1. Try Gemini with fast timeout
         if settings.GEMINI_API_KEY:
             try:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={settings.GEMINI_API_KEY}"
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={settings.GEMINI_API_KEY}"
                 payload = {
                     "contents": [{
                         "parts": [{"text": f"{self.system_prompt}\n\n{user_prompt}"}]
@@ -353,16 +353,19 @@ class Crew:
             os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
             llm_candidates = []
-            # Try Gemini first (Google AI Studio key with generous rate limits), then Gemini 1.5, then OpenAI
+            # Try Gemini first (Google AI Studio key with generous rate limits), then Gemini 2.0, then OpenAI
             if settings.GEMINI_API_KEY:
-                llm_candidates.append(("gemini/gemini-2.5-flash", "GEMINI_API_KEY", settings.GEMINI_API_KEY))
                 llm_candidates.append(("gemini/gemini-1.5-flash", "GEMINI_API_KEY", settings.GEMINI_API_KEY))
+                llm_candidates.append(("gemini/gemini-2.0-flash", "GEMINI_API_KEY", settings.GEMINI_API_KEY))
             if settings.OPENAI_API_KEY:
                 llm_candidates.append(("gpt-4o-mini", "OPENAI_API_KEY", settings.OPENAI_API_KEY))
 
             for chosen_llm, key_name, key_val in llm_candidates:
                 try:
                     os.environ[key_name] = key_val
+                    if "GEMINI" in key_name:
+                        os.environ["GOOGLE_API_KEY"] = key_val
+                        os.environ["GEMINI_API_KEY"] = key_val
 
                     # Instantiate via modern CrewAI LLM wrapper if available
                     llm_instance = chosen_llm

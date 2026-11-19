@@ -23,11 +23,17 @@ try:
     from crewai import Agent as NativeCrewAgent, Task as NativeCrewTask, Crew as NativeCrewCrew, Process as NativeCrewProcess
     from crewai.tools import tool
     HAS_CREWAI_PKG = True
-except (ImportError, Exception):
+    CREWAI_IMPORT_ERROR = None
+except (ImportError, Exception) as e:
     HAS_CREWAI_PKG = False
-    def tool(func):
+    CREWAI_IMPORT_ERROR = str(e)
+    def tool(name_or_func=None, **kwargs):
         """Fallback tool decorator when crewai is not installed."""
-        return func
+        if callable(name_or_func):
+            return name_or_func
+        def decorator(func):
+            return func
+        return decorator
 
 class Process(str, Enum):
     sequential = "sequential"
@@ -342,15 +348,30 @@ class Crew:
         # ---------------------------------------------------------------------
         if HAS_CREWAI_PKG and (settings.OPENAI_API_KEY or settings.GEMINI_API_KEY):
             import os
+            # Disable telemetry and tracing explicitly to avoid unneeded network operations
+            os.environ["CREWAI_TRACING_ENABLED"] = "false"
+            os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
+
             llm_candidates = []
-            if settings.OPENAI_API_KEY:
-                llm_candidates.append(("gpt-4o-mini", "OPENAI_API_KEY", settings.OPENAI_API_KEY))
+            # Try Gemini first (Google AI Studio key with generous rate limits), then Gemini 1.5, then OpenAI
             if settings.GEMINI_API_KEY:
                 llm_candidates.append(("gemini/gemini-2.5-flash", "GEMINI_API_KEY", settings.GEMINI_API_KEY))
+                llm_candidates.append(("gemini/gemini-1.5-flash", "GEMINI_API_KEY", settings.GEMINI_API_KEY))
+            if settings.OPENAI_API_KEY:
+                llm_candidates.append(("gpt-4o-mini", "OPENAI_API_KEY", settings.OPENAI_API_KEY))
 
             for chosen_llm, key_name, key_val in llm_candidates:
                 try:
                     os.environ[key_name] = key_val
+
+                    # Instantiate via modern CrewAI LLM wrapper if available
+                    llm_instance = chosen_llm
+                    try:
+                        from crewai import LLM as CrewLLM
+                        llm_instance = CrewLLM(model=chosen_llm, api_key=key_val)
+                    except Exception:
+                        llm_instance = chosen_llm
+
                     native_agents_map = {}
                     for a in self.agents:
                         native_agents_map[a.role] = NativeCrewAgent(
@@ -358,9 +379,10 @@ class Crew:
                             goal=a.goal,
                             backstory=a.backstory,
                             tools=a.tools or [],
-                            llm=chosen_llm,
+                            llm=llm_instance,
                             verbose=self.verbose,
-                            allow_delegation=a.allow_delegation
+                            allow_delegation=a.allow_delegation,
+                            max_iter=3
                         )
 
                     native_tasks = []
@@ -376,12 +398,17 @@ class Crew:
                         native_tasks_map[t.description] = nt
                         native_tasks.append(nt)
 
-                    native_crew = NativeCrewCrew(
-                        agents=list(native_agents_map.values()),
-                        tasks=native_tasks,
-                        process=NativeCrewProcess.hierarchical if self.process == Process.hierarchical else NativeCrewProcess.sequential,
-                        verbose=self.verbose
-                    )
+                    crew_kwargs = {
+                        "agents": list(native_agents_map.values()),
+                        "tasks": native_tasks,
+                        "process": NativeCrewProcess.hierarchical if self.process == Process.hierarchical else NativeCrewProcess.sequential,
+                        "verbose": self.verbose,
+                        "memory": False
+                    }
+                    if self.process == Process.hierarchical:
+                        crew_kwargs["manager_llm"] = llm_instance
+
+                    native_crew = NativeCrewCrew(**crew_kwargs)
 
                     logger.info(f"Executing Native CrewAI pipeline with LLM: {chosen_llm}...")
                     native_result = native_crew.kickoff()
@@ -411,7 +438,8 @@ class Crew:
                             "engine_used": "Native CrewAI Framework"
                         }
                 except Exception as e:
-                    logger.warning(f"Native CrewAI attempt with {chosen_llm} failed: {e}. Trying next engine/failover.")
+                    import traceback
+                    logger.error(f"Native CrewAI attempt with {chosen_llm} failed: {e}\n{traceback.format_exc()}")
                     continue
 
         # ---------------------------------------------------------------------

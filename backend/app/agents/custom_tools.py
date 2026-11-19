@@ -20,7 +20,7 @@ except ImportError:
             return decorator
 
 @tool("get_core_kpis")
-def get_core_kpis_tool() -> str:
+def get_core_kpis_tool(*args, **kwargs) -> str:
     """Returns core real estate business KPIs (Revenue, Commission, Expenses, Margin) from database."""
     db = SessionLocal()
     try:
@@ -30,7 +30,7 @@ def get_core_kpis_tool() -> str:
         db.close()
 
 @tool("get_city_market_data")
-def get_city_market_data_tool() -> str:
+def get_city_market_data_tool(*args, **kwargs) -> str:
     """Returns property inventory, deals closed, and revenue generated across metropolitan hubs."""
     db = SessionLocal()
     try:
@@ -40,7 +40,7 @@ def get_city_market_data_tool() -> str:
         db.close()
 
 @tool("get_lead_acquisition_and_funnel")
-def get_lead_acquisition_and_funnel_tool() -> str:
+def get_lead_acquisition_and_funnel_tool(*args, **kwargs) -> str:
     """Returns lead acquisition channel conversion hierarchy, inquiry volumes, and funnel stages."""
     db = SessionLocal()
     try:
@@ -50,7 +50,7 @@ def get_lead_acquisition_and_funnel_tool() -> str:
         db.close()
 
 @tool("get_expense_breakdown")
-def get_expense_breakdown_tool() -> str:
+def get_expense_breakdown_tool(*args, **kwargs) -> str:
     """Returns operational expenses grouped by category (Advertising, Maintenance, Legal, etc.)."""
     db = SessionLocal()
     try:
@@ -60,7 +60,7 @@ def get_expense_breakdown_tool() -> str:
         db.close()
 
 @tool("get_agent_operational_productivity")
-def get_agent_operational_productivity_tool() -> str:
+def get_agent_operational_productivity_tool(*args, **kwargs) -> str:
     """Returns broker productivity metrics (deals closed, commission earned, customer rating)."""
     db = SessionLocal()
     try:
@@ -70,7 +70,7 @@ def get_agent_operational_productivity_tool() -> str:
         db.close()
 
 @tool("get_site_visit_analytics")
-def get_site_visit_analytics_tool() -> str:
+def get_site_visit_analytics_tool(*args, **kwargs) -> str:
     """Returns physical site visit outcomes, second visit requests, and buyer offer expectations."""
     db = SessionLocal()
     try:
@@ -80,7 +80,7 @@ def get_site_visit_analytics_tool() -> str:
         db.close()
 
 @tool("get_property_type_absorption")
-def get_property_type_absorption_tool() -> str:
+def get_property_type_absorption_tool(*args, **kwargs) -> str:
     """Returns inventory units, average pricing, and sold units by property type."""
     db = SessionLocal()
     try:
@@ -90,7 +90,7 @@ def get_property_type_absorption_tool() -> str:
         db.close()
 
 @tool("get_broker_concentration")
-def get_broker_concentration_tool() -> str:
+def get_broker_concentration_tool(*args, **kwargs) -> str:
     """Returns top broker concentration metrics, commission percentages, and top broker IDs."""
     db = SessionLocal()
     try:

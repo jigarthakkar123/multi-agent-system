@@ -32,22 +32,25 @@ def get_engine_diagnostic(
 ):
     """Admin-only diagnostic endpoint to inspect live environment, CrewAI installation, and LLM configuration."""
     import os, sys
-    from ..agents.crewai_engine import HAS_CREWAI_PKG
+    from ..agents.crewai_engine import HAS_CREWAI_PKG, CREWAI_IMPORT_ERROR
     from ..core.config import settings
 
     diag = {
         "python_version": sys.version,
         "has_crewai_pkg": HAS_CREWAI_PKG,
+        "crewai_import_error": CREWAI_IMPORT_ERROR,
         "openai_key_configured": bool(os.getenv("OPENAI_API_KEY") or settings.OPENAI_API_KEY),
         "gemini_key_configured": bool(os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY),
     }
 
     if HAS_CREWAI_PKG:
         try:
+            import crewai
+            diag["crewai_version"] = getattr(crewai, "__version__", "unknown")
             from crewai import Agent as TestAgent, Task as TestTask, Crew as TestCrew
             from ..agents.custom_tools import get_core_kpis_tool
             diag["tool_type"] = str(type(get_core_kpis_tool))
-            chosen_llm = "gpt-4o-mini" if diag["openai_key_configured"] else ("gemini/gemini-2.5-flash" if diag["gemini_key_configured"] else None)
+            chosen_llm = "gemini/gemini-2.5-flash" if diag["gemini_key_configured"] else ("gpt-4o-mini" if diag["openai_key_configured"] else None)
             diag["chosen_llm"] = chosen_llm
             test_agent = TestAgent(
                 role="Test Analyst",
@@ -62,6 +65,31 @@ def get_engine_diagnostic(
             diag["agent_instantiation"] = f"ERROR: {type(e).__name__}: {str(e)}"
     else:
         diag["agent_instantiation"] = "CREWAI_PKG_NOT_INSTALLED"
+
+    # Test direct connectivity to LLMs without exposing sensitive keys
+    if diag["gemini_key_configured"]:
+        try:
+            import httpx
+            g_key = os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
+            g_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={g_key}"
+            g_res = httpx.post(g_url, json={"contents": [{"parts": [{"text": "Say OK"}]}]}, timeout=5.0)
+            diag["gemini_direct_status"] = f"HTTP {g_res.status_code}"
+        except Exception as e:
+            diag["gemini_direct_status"] = f"ERROR: {e}"
+
+    if diag["openai_key_configured"]:
+        try:
+            import httpx
+            o_key = os.getenv("OPENAI_API_KEY") or settings.OPENAI_API_KEY
+            o_res = httpx.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={"Authorization": f"Bearer {o_key}"},
+                json={"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "Say OK"}]},
+                timeout=5.0
+            )
+            diag["openai_direct_status"] = f"HTTP {o_res.status_code}"
+        except Exception as e:
+            diag["openai_direct_status"] = f"ERROR: {e}"
 
     return diag
 

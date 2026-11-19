@@ -32,14 +32,14 @@ def get_engine_diagnostic(
 ):
     """Admin-only diagnostic endpoint to inspect live environment, CrewAI installation, and LLM configuration."""
     import os, sys
-    from ..agents.crewai_engine import HAS_CREWAI_PKG, CREWAI_IMPORT_ERROR, LAST_CREWAI_ERROR
+    from ..agents.crewai_engine import HAS_CREWAI_PKG, CREWAI_IMPORT_ERROR, LAST_CREWAI_ERRORS
     from ..core.config import settings
 
     diag = {
         "python_version": sys.version,
         "has_crewai_pkg": HAS_CREWAI_PKG,
         "crewai_import_error": CREWAI_IMPORT_ERROR,
-        "last_crewai_error": LAST_CREWAI_ERROR,
+        "last_crewai_errors": LAST_CREWAI_ERRORS,
         "openai_key_configured": bool(os.getenv("OPENAI_API_KEY") or settings.OPENAI_API_KEY),
         "gemini_key_configured": bool(os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY),
     }
@@ -74,6 +74,15 @@ def get_engine_diagnostic(
                 verbose=False
             )
             diag["agent_instantiation"] = "SUCCESS"
+
+            # Test actual LLM generation
+            try:
+                if hasattr(test_llm, "call"):
+                    diag["llm_call_test"] = str(test_llm.call([{"role": "user", "content": "Say OK"}]))[:100]
+                else:
+                    diag["llm_call_test"] = "SKIPPED_STRING_LLM"
+            except Exception as call_e:
+                diag["llm_call_test"] = f"ERROR: {type(call_e).__name__}: {str(call_e)}"
         except Exception as e:
             diag["agent_instantiation"] = f"ERROR: {type(e).__name__}: {str(e)}"
     else:
@@ -87,7 +96,7 @@ def get_engine_diagnostic(
             # List available models for this key
             try:
                 list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={g_key}"
-                l_res = httpx.get(list_url, timeout=5.0)
+                l_res = httpx.get(list_url, timeout=10.0)
                 if l_res.status_code == 200:
                     diag["gemini_models_available"] = [m.get("name") for m in l_res.json().get("models", [])[:8]]
                 else:
@@ -96,7 +105,7 @@ def get_engine_diagnostic(
                 diag["gemini_list_models_status"] = f"ERROR: {le}"
 
             g_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={g_key}"
-            g_res = httpx.post(g_url, json={"contents": [{"parts": [{"text": "Say OK"}]}]}, timeout=5.0)
+            g_res = httpx.post(g_url, json={"contents": [{"parts": [{"text": "Say OK"}]}]}, timeout=15.0)
             diag["gemini_direct_status"] = f"HTTP {g_res.status_code}"
             if g_res.status_code != 200:
                 diag["gemini_error_body"] = g_res.text[:200]

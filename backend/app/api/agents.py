@@ -27,10 +27,10 @@ def execute_multi_agent_system(
 
 @router.get("/diagnostic")
 def get_engine_diagnostic(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(["admin"])),
     db: Session = Depends(get_db)
 ):
-    """Diagnostic endpoint to inspect live environment, CrewAI installation, and LLM configuration."""
+    """Admin-only diagnostic endpoint to inspect live environment, CrewAI installation, and LLM configuration."""
     import os, sys
     from ..agents.crewai_engine import HAS_CREWAI_PKG
     from ..core.config import settings
@@ -38,10 +38,8 @@ def get_engine_diagnostic(
     diag = {
         "python_version": sys.version,
         "has_crewai_pkg": HAS_CREWAI_PKG,
-        "openai_key_set": bool(os.getenv("OPENAI_API_KEY") or settings.OPENAI_API_KEY),
-        "gemini_key_set": bool(os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY),
-        "openai_prefix": (os.getenv("OPENAI_API_KEY") or settings.OPENAI_API_KEY or "")[:7],
-        "gemini_prefix": (os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY or "")[:7],
+        "openai_key_configured": bool(os.getenv("OPENAI_API_KEY") or settings.OPENAI_API_KEY),
+        "gemini_key_configured": bool(os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY),
     }
 
     if HAS_CREWAI_PKG:
@@ -49,7 +47,7 @@ def get_engine_diagnostic(
             from crewai import Agent as TestAgent, Task as TestTask, Crew as TestCrew
             from ..agents.custom_tools import get_core_kpis_tool
             diag["tool_type"] = str(type(get_core_kpis_tool))
-            chosen_llm = "gpt-4o-mini" if diag["openai_key_set"] else ("gemini/gemini-2.5-flash" if diag["gemini_key_set"] else None)
+            chosen_llm = "gpt-4o-mini" if diag["openai_key_configured"] else ("gemini/gemini-2.5-flash" if diag["gemini_key_configured"] else None)
             diag["chosen_llm"] = chosen_llm
             test_agent = TestAgent(
                 role="Test Analyst",
